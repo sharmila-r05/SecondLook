@@ -175,6 +175,7 @@ export async function captureAndPay(family: Pick<Family, "id">, sessionId: strin
     const taken = await captureAuthorization({ authorizationId: hold.paypal_authorization_id, requestId: capture.paypal_request_id, invoiceId: `sl-${bill.id}` });
     await sql`update payments set paypal_capture_id = ${taken.captureId}, status = ${taken.status} where id = ${capture.id}`;
     if (taken.status !== "COMPLETED") return; // PENDING: the webhook or the next look finishes it
+    await sql`update payments set status = 'CAPTURED' where id = ${hold.id}`; // the authorization row follows the hold
     await recordEvent(sql, family, sessionId, "paypal:captured", { requestId: bill.id, captureId: taken.captureId, amountCents: bill.amountCents });
   }
 
@@ -205,7 +206,7 @@ export async function captureAndPay(family: Pick<Family, "id">, sessionId: strin
 
   const from = bill.status;
   if (await moveRequest(sql, bill.id, from, "paid")) {
-    await recordEvent(sql, family, sessionId, "request:approved", { requestId: bill.id, paid: true });
+    await recordEvent(sql, family, sessionId, "request:paid", { requestId: bill.id, payee: bill.payeeName, amountCents: bill.amountCents });
   }
 }
 
@@ -226,6 +227,7 @@ export async function releaseHold(family: Pick<Family, "id">, sessionId: string,
     if (row.status !== "VOIDED") {
       const released = await voidAuthorization({ authorizationId: hold.paypal_authorization_id, requestId: row.paypal_request_id });
       await sql`update payments set status = ${released.status} where id = ${row.id}`;
+      await sql`update payments set status = 'VOIDED' where id = ${hold.id}`;
       await recordEvent(sql, family, sessionId, "paypal:voided", { requestId: bill.id, authorizationId: hold.paypal_authorization_id, amountCents: bill.amountCents });
     }
   }
@@ -274,6 +276,18 @@ export async function sweepExpiredHolds(family: Pick<Family, "id">, sessionId: s
       if (latest.batchStatus !== "UNKNOWN") await sql`update payments set status = ${latest.batchStatus} where id = ${id}`;
     } catch (err) {
       console.error("reading a payout failed; the next look retries:", err instanceof Error ? err.message : err);
+    }
+  }
+
+  // A family approval whose capture or payout didn't finish (PayPal hiccup): finish it now.
+  const approved = await sql<{ id: string }[]>`
+    select id from payment_requests where family_id = ${family.id} and status in ('approved_by_family', 'approved_auto')
+      and updated_at < now() - interval '15 seconds'`;
+  for (const { id } of approved) {
+    try {
+      await captureAndPay(family, sessionId, await loadRequest(sql, family, id));
+    } catch (err) {
+      console.error("finishing an approved payment failed; the next look retries:", err instanceof Error ? err.message : err);
     }
   }
 

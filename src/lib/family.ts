@@ -2,10 +2,12 @@
 // exactly one demo session (hard rule 10).
 
 import type postgres from "postgres";
+import type { SecondLook } from "@/lib/copy/family";
 import type { BillState, ParentEntry } from "@/lib/copy/parent";
 import { db } from "@/lib/db";
 import { seedFamily } from "@/lib/demo/seed";
 import { assertCents } from "@/lib/money";
+import type { RuleHit } from "@/lib/risk";
 import type { PaymentRequestState } from "@/lib/states";
 import { localDate, PARENT_TIME_ZONE } from "@/lib/time";
 
@@ -107,4 +109,57 @@ export async function getParentDay(family: Family, now = new Date()): Promise<Pa
     }),
     ...visits.map((v): ParentEntry => ({ kind: "visit", id: v.id, aide: v.aide, at: v.at })),
   ];
+}
+
+/** Payments that went to family for a second look this week: what's waiting first, then the latest decisions. */
+export async function getSecondLooks(family: Family): Promise<SecondLook[]> {
+  const rows = await db()<
+    {
+      id: string;
+      status: PaymentRequestState;
+      amount_cents: string;
+      created_at: Date;
+      updated_at: Date;
+      risk_note: string | null;
+      triggered_rules: RuleHit[];
+      hold_expires_at: Date | null;
+      payee: string;
+      decided_by: string | null;
+    }[]
+  >`
+    select pr.id, pr.status, pr.amount_cents, pr.created_at, pr.updated_at, pr.risk_note, pr.triggered_rules,
+           pr.hold_expires_at, p.name as payee, m.name as decided_by
+    from payment_requests pr
+    join payees p on p.id = pr.payee_id
+    left join members m on m.id = pr.decided_by_member_id
+    where pr.family_id = ${family.id} and pr.status <> 'new' and jsonb_array_length(pr.triggered_rules) > 0
+      and pr.created_at > now() - interval '7 days'
+    order by (pr.status = 'held') desc, pr.updated_at desc
+    limit 20`;
+  return rows.map((r) => {
+    const amountCents = Number(r.amount_cents);
+    assertCents(amountCents);
+    return {
+      id: r.id,
+      status: r.status,
+      payee: r.payee,
+      amountCents,
+      at: r.created_at,
+      note: r.risk_note,
+      rules: r.triggered_rules,
+      holdExpiresAt: r.hold_expires_at,
+      decidedBy: r.decided_by,
+      decidedAt: r.updated_at,
+    };
+  });
+}
+
+/** This week's visits (Monday to today, in Margaret's time zone) and what they come to. */
+export async function getCareWeek(family: Family, now = new Date()): Promise<{ visits: number; totalCents: number; aide: string }> {
+  const [row] = await db()<{ visits: string; total: string | null }[]>`
+    select count(*) as visits, sum(rate_cents) as total from visits
+    where family_id = ${family.id}
+      and visit_date >= date_trunc('week', (${now}::timestamptz at time zone ${PARENT_TIME_ZONE}))::date
+      and visit_date <= (${now}::timestamptz at time zone ${PARENT_TIME_ZONE})::date`;
+  return { visits: Number(row?.visits ?? 0), totalCents: Number(row?.total ?? 0), aide: memberNamed(family, "aide") ?? "The aide" };
 }

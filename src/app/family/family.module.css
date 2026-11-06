@@ -1,0 +1,243 @@
+/* Sarah's and Tom's phone view (WCAG AA). On a desktop it stays a phone-width column, as they'd see it. */
+
+.phone {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  border-radius: var(--radius-block);
+  background: var(--ground);
+}
+
+.screen {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 18px 28px;
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+
+.heading {
+  font-size: 1.875rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.subheading {
+  margin-top: 12px;
+  color: var(--ink-muted);
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.empty {
+  color: var(--ink-muted);
+  font-size: 1.125rem;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  padding: 22px 18px 20px;
+  container-type: inline-size;
+  border-radius: var(--radius-row);
+  background: var(--ground-raised);
+}
+
+.card[data-tone="waiting"] {
+  background: var(--paper);
+}
+
+.care {
+  background: var(--ground-raised);
+}
+
+.cardHead {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.cardTitle {
+  font-size: 1.1875rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.when {
+  margin-top: 4px;
+  color: var(--ink-muted);
+}
+
+.note {
+  padding-top: 14px;
+  border-top: 1px solid rgb(26 23 32 / 0.14);
+}
+
+.outcome {
+  color: var(--ink-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px rgb(26 23 32 / 0.28);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.chipIcon {
+  width: 17px;
+  height: 17px;
+  color: var(--plum-700);
+}
+
+.decide {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0;
+}
+
+.deny,
+.approve,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.deny,
+.secondary {
+  border: 2px solid var(--plum-900);
+  background: var(--paper);
+  color: var(--plum-900);
+}
+
+.approve {
+  border: 0;
+  background: var(--plum-900);
+  color: var(--paper);
+}
+
+.deny:hover,
+.secondary:hover {
+  filter: brightness(0.96);
+}
+
+.approve:hover {
+  filter: brightness(1.25);
+}
+
+.secondary {
+  justify-self: start;
+  min-height: 46px;
+  border-color: var(--rosa);
+  color: var(--ink);
+}
+
+/* Too narrow for both buttons side by side without wrapping: stack them, Approve last as in the comp's reading order. */
+@container (max-width: 330px) {
+  .decide {
+    grid-template-columns: 1fr;
+  }
+}
+
+.expires {
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+}
+
+.tabbar {
+  position: sticky;
+  bottom: 0;
+  border-radius: 0 0 var(--radius-block) var(--radius-block);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  background: var(--plum-900);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 60px;
+  padding-top: 6px;
+  border-radius: 10px;
+  color: rgb(237 230 238 / 0.78);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tab[aria-current="page"] {
+  color: var(--paper);
+}
+
+.tabIcon {
+  position: relative;
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+}
+
+.tabIcon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -12px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--plum-900);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deny,
+  .approve,
+  .secondary {
+    transition: none;
+  }
+}

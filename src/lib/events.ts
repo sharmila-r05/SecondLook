@@ -11,6 +11,7 @@ export type EventType =
   | "request:approved"
   | "request:denied"
   | "request:expired"
+  | "request:paid"
   | "paypal:authorized"
   | "paypal:captured"
   | "paypal:voided"
