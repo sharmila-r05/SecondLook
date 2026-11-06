@@ -26,7 +26,7 @@ describe("parentLine", () => {
       mark: "waiting",
       stitch: "basting",
       title: "Sent to Sarah to double-check",
-      detail: "$1,500.00 to Tech Support Line · 10:41 am",
+      detail: "$1,500.00 to Tech Support Line · 10:41\u00a0am",
     });
   });
 
@@ -37,7 +37,7 @@ describe("parentLine", () => {
 
   it("describes a visit", () => {
     const line = parentLine({ kind: "visit", id: "v", aide: "Rosa", at: new Date("2026-11-06T13:30:00Z") });
-    expect(line).toMatchObject({ title: "Rosa came today", detail: "8:30 am", mark: "settled" });
+    expect(line).toMatchObject({ title: "Rosa came today", detail: "8:30\u00a0am", mark: "settled" });
   });
 });
 

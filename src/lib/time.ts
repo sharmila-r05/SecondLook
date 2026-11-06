@@ -1,11 +1,11 @@
 // Margaret lives in Ohio: her day, her daily limits and every time she reads are in Eastern time.
 export const PARENT_TIME_ZONE = "America/New_York";
 
-/** "10:41 am" */
+/** "10:41 am", with a non-breaking space so a time never wraps away from its "am". */
 export function formatTime(at: Date, timeZone = PARENT_TIME_ZONE): string {
   return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone })
     .format(at)
-    .replace(/\s?([AP])M$/, (_, p: string) => ` ${p.toLowerCase()}m`);
+    .replace(/\s?([AP])M$/, (_, p: string) => `\u00a0${p.toLowerCase()}m`);
 }
 
 /** "Friday, November 6" */
