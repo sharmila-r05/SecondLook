@@ -1,0 +1,48 @@
+.stitch {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  width: calc(100% - 14px);
+  height: calc(100% - 14px);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.thread {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition:
+    stroke-dasharray 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    stroke 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sewn .thread {
+  stroke: var(--stitch);
+  stroke-dasharray: 7 6;
+}
+
+.light .thread {
+  stroke: rgb(255 255 255 / 0.5);
+  stroke-dasharray: 7 6;
+}
+
+.basting .thread {
+  stroke: var(--thread-rose);
+  stroke-width: 3;
+  stroke-dasharray: 18 12;
+}
+
+.pulled .thread {
+  stroke: var(--thread-rose);
+  stroke-width: 3;
+  stroke-dasharray: 4 26;
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread {
+    transition: none;
+  }
+}
