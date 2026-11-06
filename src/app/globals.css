@@ -1,0 +1,100 @@
+/* The Ohio Quilt: flat solid fabrics, a deep-plum border, fine stitching for what's settled and loose rose basting
+   for what waits on family. Contrast is chosen for WCAG AAA on Margaret's screen (see the palette notes). */
+
+:root {
+  /* Shell */
+  --plum-900: #3b1f3a;
+  --plum-800: #4a2a48;
+  --plum-700: #5c3a59;
+  --plum-100: #ede6ee;
+
+  /* Grounds and ink */
+  --ground: #e4e9ee;
+  --ground-raised: #eef1f4;
+  --paper: #ffffff;
+  --ink: #1a1720;
+  --ink-muted: #3d3944;
+
+  /* One fabric per person, used for their actions and entries everywhere */
+  --margaret: #185a5e;
+  --sarah: #34548c;
+  --tom: #c99a3e;
+  --rosa: #4e6b3f;
+
+  /* Thread */
+  --stitch: #6a6472;
+  --thread-rose: #b8476a;
+  --thread-rose-text: #9c3557;
+
+  --focus-ring: #f2b632;
+  --radius-block: 14px;
+  --radius-row: 12px;
+
+  --font-sans: var(--font-atkinson), "Atkinson Hyperlegible Next", system-ui, sans-serif;
+
+  color-scheme: light;
+  scrollbar-color: var(--plum-700) transparent;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--plum-900);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  caret-color: var(--margaret);
+}
+
+::selection {
+  background: var(--thread-rose);
+  color: var(--paper);
+}
+
+/* Two-tone ring: visible on the plum shell, the pale panels and every fabric block. */
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 7px var(--focus-ring);
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 0.08em;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
