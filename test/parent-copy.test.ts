@@ -49,3 +49,19 @@ describe("orderForParent", () => {
     expect(orderForParent([earlier, later, waiting]).map((e) => e.id)).toEqual(["waiting", "later", "paid"]);
   });
 });
+
+describe("templateNote", () => {
+  it("states the payment and each rule's fact as a sentence", async () => {
+    const { templateNote } = await import("@/lib/note");
+    expect(
+      templateNote({
+        payeeName: "Microsoft Support",
+        amountCents: 150000,
+        rules: [
+          { id: "new_payee", chip: "New payee", fact: "Microsoft Support isn't on the family's list" },
+          { id: "scam_wording", chip: "Tech-support story", fact: 'she mentioned "hacked"' },
+        ],
+      }),
+    ).toBe('Mom is trying to pay $1,500.00 to Microsoft Support. Microsoft Support isn\'t on the family\'s list. She mentioned "hacked".');
+  });
+});

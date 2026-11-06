@@ -5,6 +5,6 @@ import { formatUsd } from "@/lib/money";
 import type { RuleHit } from "@/lib/risk";
 
 export function templateNote(input: { payeeName: string; amountCents: number; rules: readonly RuleHit[] }): string {
-  const facts = input.rules.map((r) => r.fact).join("; ");
-  return `Mom is trying to pay ${formatUsd(input.amountCents)} to ${input.payeeName}. ${facts ? `${facts.charAt(0).toUpperCase()}${facts.slice(1)}.` : ""}`.trim();
+  const facts = input.rules.map((r) => `${r.fact.charAt(0).toUpperCase()}${r.fact.slice(1)}.`).join(" ");
+  return `Mom is trying to pay ${formatUsd(input.amountCents)} to ${input.payeeName}. ${facts}`.trim();
 }

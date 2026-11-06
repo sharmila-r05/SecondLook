@@ -10,7 +10,7 @@ import { SANDBOX_EMAILS } from "@/lib/demo/accounts";
 import { recordEvent } from "@/lib/events";
 import type { Family } from "@/lib/family";
 import { assertCents } from "@/lib/money";
-import { authorizeOrder, captureAuthorization, createAuthorizeOrder, createPayout, voidAuthorization } from "@/lib/paypal";
+import { authorizeOrder, captureAuthorization, createAuthorizeOrder, createPayout, getPayout, voidAuthorization } from "@/lib/paypal";
 import type { RuleHit } from "@/lib/risk";
 import { type PaymentRequestState, transition } from "@/lib/states";
 
@@ -257,6 +257,26 @@ export async function sweepExpiredHolds(family: Pick<Family, "id">, sessionId: s
   for (const { id } of due) {
     if (await moveRequest(sql, id, "held", "expired")) await recordEvent(sql, family, sessionId, "request:expired", { requestId: id });
   }
+  // Orders Margaret never approved or cancelled (closed the tab on PayPal's page): nothing was authorized.
+  const abandoned = await sql<{ id: string }[]>`
+    select id from payment_requests
+    where family_id = ${family.id} and status = 'new' and created_at < now() - interval '30 minutes'`;
+  for (const { id } of abandoned) await abandonBill(family, id);
+
+  // Payouts finish a few seconds after we send them; read back any still in flight (webhooks do this once deployed).
+  const inFlight = await sql<{ id: string; batch: string }[]>`
+    select id, paypal_payout_batch_id as batch from payments
+    where family_id = ${family.id} and kind = 'payout' and paypal_payout_batch_id is not null
+      and status in ('PENDING', 'PROCESSING')`;
+  for (const { id, batch } of inFlight) {
+    try {
+      const latest = await getPayout(batch);
+      if (latest.batchStatus !== "UNKNOWN") await sql`update payments set status = ${latest.batchStatus} where id = ${id}`;
+    } catch (err) {
+      console.error("reading a payout failed; the next look retries:", err instanceof Error ? err.message : err);
+    }
+  }
+
   const unreleased = await sql<{ id: string }[]>`
     select id from payment_requests where family_id = ${family.id} and status in ('denied', 'expired')`;
   for (const { id } of unreleased) {
