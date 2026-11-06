@@ -1,0 +1,61 @@
+{
+  "saved_at": "2026-11-06T06:20:46.553Z",
+  "method": "POST",
+  "path": "/v2/payments/authorizations/0ND19896MG136693S/capture",
+  "request_id": "efd2dca8-173d-4b1f-adcf-6d08a2c5d452",
+  "http_status": 201,
+  "debug_id": "f504218634f04",
+  "ms": 2349,
+  "response": {
+    "id": "223549106K876420V",
+    "amount": {
+      "currency_code": "USD",
+      "value": "84.00"
+    },
+    "final_capture": true,
+    "seller_protection": {
+      "status": "NOT_ELIGIBLE"
+    },
+    "seller_receivable_breakdown": {
+      "gross_amount": {
+        "currency_code": "USD",
+        "value": "84.00"
+      },
+      "paypal_fee": {
+        "currency_code": "USD",
+        "value": "2.67"
+      },
+      "net_amount": {
+        "currency_code": "USD",
+        "value": "81.33"
+      },
+      "exchange_rate": {}
+    },
+    "invoice_id": "gate-cap-1793946039694-1",
+    "custom_id": "gate-cap-1793946039694",
+    "status": "COMPLETED",
+    "create_time": "2026-11-06T06:20:45Z",
+    "update_time": "2026-11-06T06:20:45Z",
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v2/payments/captures/223549106K876420V",
+        "rel": "self",
+        "method": "GET"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/payments/captures/223549106K876420V/refund",
+        "rel": "refund",
+        "method": "POST"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/0ND19896MG136693S",
+        "rel": "up",
+        "method": "GET"
+      }
+    ],
+    "network_transaction_reference": {
+      "id": "376431974200058",
+      "network": "VISA"
+    }
+  }
+}

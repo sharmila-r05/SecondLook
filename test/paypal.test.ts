@@ -1,0 +1,163 @@
+// The PayPal client against real sandbox answers recorded on 6 Nov (test/fixtures/paypal, emails removed).
+// Nothing here calls PayPal: the SDK gets a stub axios adapter and a seeded token, the REST calls a stub fetch.
+
+import { readFileSync } from "node:fs";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import {
+  authorizeOrder,
+  captureAuthorization,
+  createAuthorizeOrder,
+  createPayout,
+  PayPalError,
+  setPayPalTransportForTests,
+  voidAuthorization,
+} from "@/lib/paypal";
+
+interface Recorded {
+  http_status: number;
+  debug_id?: string;
+  response?: unknown;
+}
+interface Sent {
+  url: string;
+  method: string;
+  requestId?: string;
+  body?: Record<string, unknown>;
+}
+
+const recorded = (name: string): Recorded => JSON.parse(readFileSync(new URL(`./fixtures/paypal/${name}.json`, import.meta.url), "utf8"));
+
+function header(headers: unknown, name: string): string | undefined {
+  if (!headers) return undefined;
+  const h = headers as { get?: (n: string) => string | null } & Record<string, string>;
+  if (typeof h.get === "function") return h.get(name) ?? undefined;
+  const key = Object.keys(h).find((k) => k.toLowerCase() === name.toLowerCase());
+  return key ? h[key] : undefined;
+}
+
+/** Answers each PayPal call, in order, with the next recorded response; returns what was sent. */
+function replay(...names: string[]): Sent[] {
+  const queue = names.map(recorded);
+  const sent: Sent[] = [];
+  const next = () => {
+    const answer = queue.shift();
+    if (!answer) throw new Error("the code made more PayPal calls than were recorded");
+    return answer;
+  };
+  setPayPalTransportForTests({
+    adapter: async (config) => {
+      const answer = next();
+      const c = config as typeof config & { headers?: unknown };
+      sent.push({ url: c.url, method: c.method.toUpperCase(), requestId: header(c.headers, "PayPal-Request-Id"), body: c.data ? JSON.parse(c.data) : undefined });
+      return {
+        data: answer.response === undefined ? "" : JSON.stringify(answer.response),
+        status: answer.http_status,
+        statusText: "",
+        headers: { "content-type": "application/json", "paypal-debug-id": answer.debug_id ?? "" },
+        config,
+      };
+    },
+    fetch: async (url, init) => {
+      const answer = next();
+      sent.push({
+        url: String(url),
+        method: (init?.method ?? "GET").toUpperCase(),
+        requestId: header(init?.headers, "PayPal-Request-Id"),
+        body: init?.body ? JSON.parse(String(init.body)) : undefined,
+      });
+      return new Response(JSON.stringify(answer.response ?? {}), {
+        status: answer.http_status,
+        headers: { "content-type": "application/json", "paypal-debug-id": answer.debug_id ?? "" },
+      });
+    },
+  });
+  return sent;
+}
+
+beforeAll(() => {
+  process.env.PAYPAL_ENV = "sandbox";
+  process.env.PAYPAL_CLIENT_ID = "test-client-id";
+  process.env.PAYPAL_CLIENT_SECRET = "test-client-secret";
+});
+afterEach(() => setPayPalTransportForTests(null));
+
+const order = { amountCents: 8400, description: "Hollowbrook Electric bill", customId: "req-1", returnUrl: "http://localhost/r", cancelUrl: "http://localhost/c" };
+
+describe("hard rule 4: every POST carries the stored PayPal-Request-Id", () => {
+  it("refuses to send a POST without one", async () => {
+    const sent = replay();
+    await expect(createAuthorizeOrder({ ...order, requestId: "" })).rejects.toThrow(/PayPal-Request-Id/);
+    await expect(captureAuthorization({ authorizationId: "A", requestId: "", invoiceId: "i" })).rejects.toThrow(/PayPal-Request-Id/);
+    expect(sent).toHaveLength(0);
+  });
+});
+
+describe("orders and payments (server SDK)", () => {
+  it("creates an AUTHORIZE order Margaret approves on PayPal", async () => {
+    const sent = replay("order-create-paypal");
+    const result = await createAuthorizeOrder({ ...order, requestId: "rid-create" });
+
+    expect(result.status).toBe("PAYER_ACTION_REQUIRED");
+    expect(result.approveUrl).toMatch(/^https:\/\/www\.sandbox\.paypal\.com\/checkoutnow\?token=/);
+    const [request] = sent;
+    expect(request).toMatchObject({ method: "POST", requestId: "rid-create" });
+    expect(request?.url).toMatch(/\/v2\/checkout\/orders$/);
+    expect(request?.body).toMatchObject({
+      intent: "AUTHORIZE",
+      purchase_units: [{ custom_id: "req-1", amount: { currency_code: "USD", value: "84.00" } }],
+      payment_source: { paypal: { experience_context: { shipping_preference: "NO_SHIPPING", user_action: "CONTINUE" } } },
+    });
+  });
+
+  it("captures a hold in full", async () => {
+    const sent = replay("capture");
+    const result = await captureAuthorization({ authorizationId: "AUTH1", requestId: "rid-capture", invoiceId: "sl-req-1" });
+    expect(result.status).toBe("COMPLETED");
+    expect(result.captureId).toBeTruthy();
+    expect(sent[0]?.url).toMatch(/\/v2\/payments\/authorizations\/AUTH1\/capture$/);
+    expect(sent[0]?.body).toMatchObject({ final_capture: true, invoice_id: "sl-req-1" });
+  });
+
+  it("names PayPal's issue and debug_id when a capture comes too late", async () => {
+    replay("capture-after-void");
+    const err = await captureAuthorization({ authorizationId: "AUTH1", requestId: "rid", invoiceId: "i" }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(PayPalError);
+    expect(err).toMatchObject({ status: 422, issue: "AUTHORIZATION_VOIDED", debugId: recorded("capture-after-void").debug_id });
+  });
+
+  it("voids a hold, and treats PREVIOUSLY_VOIDED as already released", async () => {
+    replay("void", "void-again");
+    await expect(voidAuthorization({ authorizationId: "AUTH1", requestId: "rid-1" })).resolves.toMatchObject({ status: "VOIDED" });
+    await expect(voidAuthorization({ authorizationId: "AUTH1", requestId: "rid-2" })).resolves.toMatchObject({ status: "VOIDED" });
+  });
+
+  it("authorizeOrder sends the stored request id to the order's authorize path", async () => {
+    const sent = replay("capture-after-void");
+    await expect(authorizeOrder({ orderId: "ORDER1", requestId: "rid-auth" })).rejects.toBeInstanceOf(PayPalError);
+    expect(sent[0]).toMatchObject({ method: "POST", requestId: "rid-auth" });
+    expect(sent[0]?.url).toMatch(/\/v2\/checkout\/orders\/ORDER1\/authorize$/);
+  });
+});
+
+describe("payouts (REST)", () => {
+  const payout = { requestId: "rid-payout", receiverEmail: "aide@example.test", amountCents: 15000, note: "Week of Nov 2", senderItemId: "period-1", emailSubject: "Your pay" };
+
+  it("pays one person with a fixed sender_batch_id", async () => {
+    const sent = replay("payout-create");
+    const result = await createPayout({ ...payout, senderBatchId: "sl-period-1" });
+    expect(result.payoutBatchId).toBeTruthy();
+    expect(sent[0]).toMatchObject({ method: "POST", requestId: "rid-payout" });
+    expect(sent[0]?.body).toMatchObject({
+      sender_batch_header: { sender_batch_id: "sl-period-1" },
+      items: [{ recipient_type: "EMAIL", amount: { value: "150.00", currency: "USD" } }],
+    });
+  });
+
+  it("on a reused sender_batch_id, returns the original batch instead of paying twice", async () => {
+    const sent = replay("payout-replay", "payout-get");
+    const result = await createPayout({ ...payout, senderBatchId: "sl-period-1" });
+    expect(result.batchStatus).toBe("SUCCESS");
+    expect(sent.map((s) => s.method)).toEqual(["POST", "GET"]);
+    expect(sent[1]?.url).toContain(`/v1/payments/payouts/${result.payoutBatchId}`);
+  });
+});

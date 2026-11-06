@@ -1,0 +1,47 @@
+{
+  "saved_at": "2026-11-06T06:58:47.492Z",
+  "method": "POST",
+  "path": "/v2/checkout/orders",
+  "request_id": "4af884be-c8e5-403f-ab1f-b534b4ca5a18",
+  "http_status": 200,
+  "debug_id": "f274055d8fccb",
+  "ms": 1567,
+  "response": {
+    "id": "87E329000T593352T",
+    "intent": "AUTHORIZE",
+    "status": "PAYER_ACTION_REQUIRED",
+    "payment_source": {
+      "paypal": {}
+    },
+    "purchase_units": [
+      {
+        "reference_id": "gate",
+        "amount": {
+          "currency_code": "USD",
+          "value": "84.00"
+        },
+        "payee": {
+          "email_address": "<secondlook>",
+          "merchant_id": "Y3WGWVT9JFCUG",
+          "display_data": {
+            "brand_name": "Second Look"
+          }
+        },
+        "description": "Hollowbrook Electric bill",
+        "custom_id": "gate"
+      }
+    ],
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v2/checkout/orders/87E329000T593352T",
+        "rel": "self",
+        "method": "GET"
+      },
+      {
+        "href": "https://www.sandbox.paypal.com/checkoutnow?token=87E329000T593352T",
+        "rel": "payer-action",
+        "method": "GET"
+      }
+    ]
+  }
+}

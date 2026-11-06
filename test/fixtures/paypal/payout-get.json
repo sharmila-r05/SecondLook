@@ -1,0 +1,73 @@
+{
+  "saved_at": "2026-11-06T06:25:17.314Z",
+  "method": "GET",
+  "path": "/v1/payments/payouts/PJSKE3T5RSJ6S",
+  "http_status": 200,
+  "debug_id": "f96941622cbfa",
+  "ms": 1069,
+  "response": {
+    "batch_header": {
+      "payout_batch_id": "PJSKE3T5RSJ6S",
+      "batch_status": "SUCCESS",
+      "time_created": "2026-11-06T06:24:51Z",
+      "time_completed": "2026-11-06T06:25:14Z",
+      "time_closed": "2026-11-06T06:25:14Z",
+      "sender_batch_header": {
+        "sender_batch_id": "sl-gate-1793946290800",
+        "email_subject": "Your pay from Second Look",
+        "email_message": "Thank you for caring for Margaret this week."
+      },
+      "funding_source": "BALANCE",
+      "amount": {
+        "currency": "USD",
+        "value": "150.00"
+      },
+      "fees": {
+        "currency": "USD",
+        "value": "0.25"
+      }
+    },
+    "items": [
+      {
+        "payout_item_id": "X4AT7TAC2SD52",
+        "transaction_id": "7A757953X0927030L",
+        "activity_id": "7XR64439KH706803V",
+        "transaction_status": "SUCCESS",
+        "payout_item_fee": {
+          "currency": "USD",
+          "value": "0.25"
+        },
+        "payout_batch_id": "PJSKE3T5RSJ6S",
+        "payout_item": {
+          "recipient_type": "EMAIL",
+          "amount": {
+            "currency": "USD",
+            "value": "150.00"
+          },
+          "note": "Care for Margaret, week of Nov 2 (gate test)",
+          "receiver": "<rosa>",
+          "sender_item_id": "sl-gate-1793946290800-rosa",
+          "recipient_wallet": "PAYPAL",
+          "purpose": "GOODS"
+        },
+        "time_processed": "2026-11-06T06:25:06Z",
+        "links": [
+          {
+            "href": "https://api.sandbox.paypal.com/v1/payments/payouts-item/X4AT7TAC2SD52",
+            "rel": "item",
+            "method": "GET",
+            "encType": "application/json"
+          }
+        ]
+      }
+    ],
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v1/payments/payouts/PJSKE3T5RSJ6S?page_size=1000&page=1",
+        "rel": "self",
+        "method": "GET",
+        "encType": "application/json"
+      }
+    ]
+  }
+}

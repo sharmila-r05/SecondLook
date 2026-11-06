@@ -1,0 +1,27 @@
+{
+  "saved_at": "2026-11-06T06:21:24.237Z",
+  "method": "POST",
+  "path": "/v2/payments/authorizations/39S13547T43495715/capture",
+  "request_id": "cdc079f3-6d4c-4291-ab98-623276e1b0f7",
+  "http_status": 422,
+  "debug_id": "f446041fe6829",
+  "ms": 912,
+  "response": {
+    "name": "UNPROCESSABLE_ENTITY",
+    "message": "The requested action could not be performed, semantically incorrect, or failed business validation.",
+    "debug_id": "f446041fe6829",
+    "details": [
+      {
+        "issue": "AUTHORIZATION_VOIDED",
+        "description": "Authorization has been voided."
+      }
+    ],
+    "links": [
+      {
+        "href": "https://developer.paypal.com/docs/api/payments/v2/#error-AUTHORIZATION_VOIDED",
+        "rel": "information_link",
+        "encType": "application/json"
+      }
+    ]
+  }
+}

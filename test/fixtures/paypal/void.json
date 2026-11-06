@@ -1,0 +1,30 @@
+{
+  "saved_at": "2026-11-06T06:21:21.988Z",
+  "method": "POST",
+  "path": "/v2/payments/authorizations/39S13547T43495715/void",
+  "request_id": "558c3f2b-b30d-4617-bae9-a6419d6ff44a",
+  "http_status": 200,
+  "debug_id": "f350665690b1e",
+  "ms": 1393,
+  "response": {
+    "id": "39S13547T43495715",
+    "status": "VOIDED",
+    "amount": {
+      "currency_code": "USD",
+      "value": "1500.00"
+    },
+    "seller_protection": {
+      "status": "NOT_ELIGIBLE"
+    },
+    "expiration_time": "2026-12-04T22:21:19-08:00",
+    "create_time": "2026-11-05T22:21:19-08:00",
+    "update_time": "2026-11-05T22:21:21-08:00",
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/39S13547T43495715",
+        "rel": "self",
+        "method": "GET"
+      }
+    ]
+  }
+}

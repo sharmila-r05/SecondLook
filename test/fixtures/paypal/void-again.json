@@ -1,0 +1,26 @@
+{
+  "saved_at": "2026-11-06T06:21:25.352Z",
+  "method": "POST",
+  "path": "/v2/payments/authorizations/39S13547T43495715/void",
+  "request_id": "fdd0f827-3341-4428-9439-c373ecd81bec",
+  "http_status": 422,
+  "debug_id": "f256789d26612",
+  "ms": 1114,
+  "response": {
+    "name": "UNPROCESSABLE_ENTITY",
+    "message": "The requested action could not be performed, semantically incorrect, or failed business validation.",
+    "debug_id": "f256789d26612",
+    "details": [
+      {
+        "issue": "PREVIOUSLY_VOIDED",
+        "description": "Authorization has been previously voided and hence cannot be voided again."
+      }
+    ],
+    "links": [
+      {
+        "href": "https://developer.paypal.com/docs/api/payments/v2/#error-PREVIOUSLY_VOIDED",
+        "rel": "information_link"
+      }
+    ]
+  }
+}
