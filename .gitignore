@@ -1,0 +1,39 @@
+# Secrets: never commit. .env.example is the only env file in git.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Working docs (brief, research, notes, plans, submission drafts): local only.
+# Delete this line if the owner wants them in the public repo.
+docs/
+
+# Dependencies and build output
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+next-env.d.ts
+*.tsbuildinfo
+
+# Sandbox run recordings, scratch files, logs
+tmp/
+*.log
+
+# Coding-agent and design tooling (Claude Code, Codex, skills, impeccable): local only
+.claude/
+.codex/
+.agents/
+.impeccable/
+.remember/
+PRODUCT.md
+DESIGN.md
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
