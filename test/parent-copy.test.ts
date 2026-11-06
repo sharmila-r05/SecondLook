@@ -51,17 +51,17 @@ describe("orderForParent", () => {
 });
 
 describe("templateNote", () => {
-  it("states the payment and each rule's fact as a sentence", async () => {
+  it("states each rule's fact as its own sentence, without repeating the card title", async () => {
     const { templateNote } = await import("@/lib/note");
     expect(
       templateNote({
         payeeName: "Microsoft Support",
         amountCents: 150000,
         rules: [
-          { id: "new_payee", chip: "New payee", fact: "Microsoft Support isn't on the family's list" },
-          { id: "scam_wording", chip: "Tech-support story", fact: 'she mentioned "hacked"' },
+          { id: "new_payee", chip: "New payee", fact: "Microsoft Support isn’t on the family’s list" },
+          { id: "scam_wording", chip: "Tech-support story", fact: 'she mentioned “hacked”' },
         ],
       }),
-    ).toBe('Mom is trying to pay $1,500.00 to Microsoft Support. Microsoft Support isn\'t on the family\'s list. She mentioned "hacked".');
+    ).toBe("Microsoft Support isn’t on the family’s list. She mentioned “hacked”.");
   });
 });

@@ -70,7 +70,7 @@ export function evaluate(input: RiskInput, policy: RiskPolicy = DEFAULT_POLICY):
   const text = normalize(input.text);
 
   if (!payee || !payee.known) {
-    rules.push({ id: "new_payee", chip: "New payee", fact: `${payee?.name ?? input.payeeAsHeard} isn't on the family's list` });
+    rules.push({ id: "new_payee", chip: "New payee", fact: `${payee?.name ?? input.payeeAsHeard} isn’t on the family’s list` });
   }
 
   const limit = payee?.perPaymentLimitCents ?? policy.defaultLimitCents;
@@ -89,11 +89,11 @@ export function evaluate(input: RiskInput, policy: RiskPolicy = DEFAULT_POLICY):
 
   for (const group of SCAM_GROUPS) {
     const heard = group.phrases.find((p) => containsPhrase(text, p));
-    if (heard) rules.push({ id: "scam_wording", chip: group.chip, fact: `She mentioned "${heard}"` });
+    if (heard) rules.push({ id: "scam_wording", chip: group.chip, fact: `She mentioned “${heard}”` });
   }
 
   const rushed = URGENCY.find((p) => containsPhrase(text, p));
-  if (rushed) rules.push({ id: "urgency", chip: "Urgent wording", fact: `She said "${rushed}"` });
+  if (rushed) rules.push({ id: "urgency", chip: "Urgent wording", fact: `She said “${rushed}”` });
 
   if (input.todaysTotalCents + amountCents > policy.dailyLimitCents) {
     rules.push({
