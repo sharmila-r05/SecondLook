@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+import { improveHeldNote } from "@/lib/ai-note";
 import { finishApproval } from "@/lib/bills";
 import { ensureFamily } from "@/lib/family";
 import { templateNote } from "@/lib/note";
@@ -18,7 +19,9 @@ export async function GET(request: Request) {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
   try {
-    await finishApproval(family, sessionId, orderId, HOLD_MINUTES, async (bill) => templateNote(bill));
+    const bill = await finishApproval(family, sessionId, orderId, HOLD_MINUTES, async (held) => templateNote(held));
+    // The template note is already saved; Claude's replaces it after Margaret has her answer.
+    if (bill.status === "held") after(() => improveHeldNote(family, sessionId, bill.id));
     return NextResponse.redirect(new URL("/parent", url), 303);
   } catch (err) {
     // Log PayPal's debug_id, never bodies or emails.

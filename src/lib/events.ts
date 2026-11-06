@@ -18,7 +18,8 @@ export type EventType =
   | "paypal:payout"
   | "paypal:invoice_sent"
   | "paypal:invoice_paid"
-  | "week:closed";
+  | "week:closed"
+  | "ai:note";
 
 export async function recordEvent(
   sql: postgres.Sql | postgres.TransactionSql,
