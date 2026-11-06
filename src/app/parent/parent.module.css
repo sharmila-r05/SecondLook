@@ -46,7 +46,7 @@
   padding: 26px 30px;
   border-radius: var(--radius-row);
   background: var(--ground-raised);
-  font-size: 1.5rem;
+  font-size: 1.625rem;
   line-height: 1.35;
 }
 
@@ -119,6 +119,7 @@
 @media (max-width: 760px) {
   .layout {
     grid-template-columns: 1fr;
+    align-content: start;
     gap: 12px;
   }
 

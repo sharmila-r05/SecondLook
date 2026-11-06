@@ -4,16 +4,19 @@ import { Frame } from "@/components/quilt/Frame";
 import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
 import { orderForParent, parentLine } from "@/lib/copy/parent";
-import { sampleParentDay } from "@/lib/demo/sample";
+import { ensureFamily, getParentDay, memberNamed } from "@/lib/family";
+import { getSessionId } from "@/lib/session";
 import { formatDay } from "@/lib/time";
 import styles from "./parent.module.css";
 
 // Today's date and entries change through the day.
 export const dynamic = "force-dynamic";
 
-export default function ParentHome() {
+export default async function ParentHome() {
   const now = new Date();
-  const lines = orderForParent(sampleParentDay(now)).map(parentLine);
+  const family = await ensureFamily(await getSessionId());
+  const lines = orderForParent(await getParentDay(family, now)).map(parentLine);
+  const aide = memberNamed(family, "aide") ?? "The aide";
 
   return (
     <Frame role="margaret">
@@ -49,7 +52,7 @@ export default function ParentHome() {
           <Link href="/parent/visit" className={`${styles.action} ${styles.visit}`}>
             <Stitch kind="light" />
             <House className={styles.icon} aria-hidden="true" />
-            <span>Rosa came today</span>
+            <span>{aide} came today</span>
           </Link>
         </nav>
       </div>
