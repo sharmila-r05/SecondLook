@@ -1,0 +1,28 @@
+import { NextResponse } from "next/server";
+import { finishApproval } from "@/lib/bills";
+import { ensureFamily } from "@/lib/family";
+import { templateNote } from "@/lib/note";
+import { PayPalError } from "@/lib/paypal";
+import { getSessionId } from "@/lib/session";
+
+export const dynamic = "force-dynamic";
+
+const HOLD_MINUTES = Number(process.env.HOLD_TIMEOUT_MINUTES ?? 10) || 10;
+
+/** PayPal sends Margaret back here once she approved (?token=<order id>): place the hold, then apply the decision. */
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const orderId = url.searchParams.get("token");
+  if (!orderId) return NextResponse.redirect(new URL("/parent", url), 303);
+
+  const sessionId = await getSessionId();
+  const family = await ensureFamily(sessionId);
+  try {
+    await finishApproval(family, sessionId, orderId, HOLD_MINUTES, async (bill) => templateNote(bill));
+    return NextResponse.redirect(new URL("/parent", url), 303);
+  } catch (err) {
+    // Log PayPal's debug_id, never bodies or emails.
+    console.error("finishing a bill failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);
+    return NextResponse.redirect(new URL("/parent?paypal=problem", url), 303);
+  }
+}

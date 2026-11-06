@@ -1,6 +1,8 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { startBill } from "@/lib/bills";
 import { db } from "@/lib/db";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily, memberNamed } from "@/lib/family";
@@ -49,7 +51,10 @@ export async function hearRequest(text: string): Promise<ReadBack> {
   };
 }
 
-/** "Yes, pay it": saves the request and decides by the rules whether family takes a second look. */
+/**
+ * "Yes, pay it": saves the request with the rules' decision, creates the PayPal order and sends Margaret to PayPal to
+ * approve it. The decision takes effect once PayPal has authorized the payment (see /parent/pay/return).
+ */
 export async function confirmRequest(input: { said: string; payeeId: string | null; payeeName: string; amountCents: number }): Promise<void> {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
@@ -58,7 +63,7 @@ export async function confirmRequest(input: { said: string; payeeId: string | nu
   const payeeName = input.payeeName.trim().slice(0, 80);
   if (!payeeName) throw new Error("no payee");
 
-  await db().begin(async (tx) => {
+  const requestId = await db().begin(async (tx) => {
     let payee: { id: string; name: string; known: boolean; per_payment_limit_cents: string | null; usual_amount_cents: string | null } | undefined;
     if (input.payeeId) {
       [payee] = await tx`
@@ -106,6 +111,10 @@ export async function confirmRequest(input: { said: string; payeeId: string | nu
       amountCents: input.amountCents,
       secondLook: risk.hold,
     });
+    return request.id;
   });
-  redirect("/parent");
+
+  const h = await headers();
+  const origin = process.env.APP_BASE_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+  redirect(await startBill(family, sessionId, requestId, origin));
 }

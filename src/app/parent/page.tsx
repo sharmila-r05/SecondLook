@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Frame } from "@/components/quilt/Frame";
 import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
+import { sweepExpiredHolds } from "@/lib/bills";
 import { orderForParent, parentLine } from "@/lib/copy/parent";
 import { ensureFamily, getParentDay, memberNamed } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
@@ -12,9 +13,12 @@ import styles from "./parent.module.css";
 // Today's date and entries change through the day.
 export const dynamic = "force-dynamic";
 
-export default async function ParentHome() {
+export default async function ParentHome({ searchParams }: { searchParams: Promise<{ paypal?: string }> }) {
   const now = new Date();
-  const family = await ensureFamily(await getSessionId());
+  const sessionId = await getSessionId();
+  const family = await ensureFamily(sessionId);
+  await sweepExpiredHolds(family, sessionId);
+  const { paypal } = await searchParams;
   const lines = orderForParent(await getParentDay(family, now)).map(parentLine);
   const aide = memberNamed(family, "aide") ?? "The aide";
 
@@ -25,6 +29,11 @@ export default async function ParentHome() {
           <h1 id="today-heading" className={styles.heading}>
             Today, {formatDay(now)}
           </h1>
+          {paypal === "problem" && (
+            <p className={styles.notice} role="status">
+              PayPal didn&rsquo;t finish that payment, so nothing was paid. You can try again.
+            </p>
+          )}
           {lines.length === 0 ? (
             <p className={styles.empty}>Nothing yet today.</p>
           ) : (
