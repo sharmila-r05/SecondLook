@@ -2,12 +2,124 @@
 
 **Mom pays her own bills. The family gets a second look when something's off.**
 
-A family money desk for an ageing parent. She keeps paying her own bills. A payment that looks like a scam is held as
-a PayPal authorization until a son or daughter approves it, and if they deny it, the hold is voided and the money never
-leaves. Care costs are handled too: the home aide is paid through PayPal Payouts, and the siblings are each invoiced for
-their share through PayPal Invoicing.
+Second Look is a family money desk for an ageing parent. Margaret keeps paying her own bills by saying or typing what
+she wants to pay. A payment that looks like a scam isn't refused and isn't paid: it's **held as a PayPal authorization**
+until her son or daughter takes a second look. If they approve, it's captured and paid. If they deny it, the hold is
+voided, and the money never left Mom's account. Care costs are handled too: Rosa, the home aide, is paid through **PayPal
+Payouts**, and the siblings each get a **PayPal invoice** for their share.
 
-Built for the PayPal AI Hackathon. Runs on the PayPal sandbox only: no real money, and every person in the demo is
+Built for the PayPal AI Hackathon. It runs on the **PayPal sandbox only**: no real money moves, and every person in it is
 fictional.
 
-**Status:** being set up. Run instructions, screenshots and the demo link will appear here.
+- **Live demo:** _link added at submission_
+- **Video:** _link added at submission_
+
+## Try it
+
+The demo has one screen per person, switched with the tabs at the top. Each visitor gets their own demo family, and
+**Reset** starts it over.
+
+| Tab | Who | What to do |
+|---|---|---|
+| Margaret | The parent (`/parent`) | Tap **Pay a bill** and say or type "Pay the electric bill, $84". It's paid straight away. Then try "Pay $1,500 to tech support, they said my computer is hacked". |
+| Sarah, Tom | Her children (`/family`) | The held payment appears with a short note on why. **Deny and cancel** voids the hold; **Approve and pay** captures it. On **Care**, close the week to pay Rosa and invoice both of them. |
+| Rosa | The home aide (`/aide`) | **I'm here** and **Visit done**; her week and her pay. |
+| Ledger | Everyone (`/ledger`) | Every money move, week by week, with the PayPal step behind each one. |
+
+Margaret approves her payments on PayPal's sandbox site; the sandbox buyer login for her account is in the submission's
+testing instructions.
+
+## How the money moves
+
+**A bill (Orders v2 + Payments v2 + Payouts).** Margaret's payment becomes an `AUTHORIZE` order to Second Look, which she
+approves on PayPal. Fixed rules then decide:
+
+- **Nothing unusual:** the authorization is captured at once, and the payee is paid by Payouts.
+- **Something unusual** (a new payee, over her limit, three times the usual amount, scam wording such as "gift cards" or
+  "hacked", urgency, or too much in one day): the authorization stays open as a hold, and Sarah and Tom are asked. The
+  first answer wins, exactly once. Approve captures and pays; deny **voids** the authorization. A hold nobody answers is
+  voided automatically when its time runs out.
+
+**The care week (Payouts + Invoicing v2).** Rosa's visits are logged by Rosa or by Margaret ("Rosa came today"). Closing
+the week pays Rosa the total by Payouts and sends Sarah and Tom each a PayPal invoice for their share, split to the cent.
+
+Every PayPal POST carries a `PayPal-Request-Id` stored before the call; payouts use a fixed `sender_batch_id` and invoices
+a fixed invoice number, so a retry never pays twice. Webhooks are verified with PayPal and applied once.
+
+| PayPal API | Used for |
+|---|---|
+| Orders v2 | `AUTHORIZE` orders for Margaret's bills |
+| Payments v2 | Authorize, capture (approve), void (deny or expiry) |
+| Payouts | Paying the payee of a bill; paying Rosa for the week |
+| Invoicing v2 | One invoice per sibling for their share of the care week |
+| Webhooks | Verified notifications for captures, voids, payouts and paid invoices |
+
+Orders and Payments go through the official **PayPal Server SDK** for TypeScript (`@paypal/paypal-server-sdk`); Payouts,
+Invoicing and webhook verification use the REST API directly.
+
+## Where AI is used
+
+- **Claude Sonnet 5.5** (`claude-sonnet-5-5`, Anthropic API) writes the short note Sarah and Tom read on a held payment,
+  from the facts the rules found. The rules alone decide what's held; the model only explains. The note is written after
+  Margaret has her answer, so she never waits on it, and a plain template note is used if the model is off, over its cap,
+  slow, or returns anything unexpected. Calls are capped per demo session and per day.
+- **Browser speech recognition** turns what Margaret says into text on her device.
+
+Margaret's screen never shows a risk score or the word "scam": a held payment reads "Sent to Sarah to double-check".
+
+## Sponsor tools
+
+- **Render:** the web service and Postgres run on Render from `render.yaml`, and closing the care week runs on **Render
+  Workflows** (`workflows/close-week.ts`) with retries.
+- **AG Grid:** the ledger's "Every PayPal step" table is AG Grid Community.
+- **APIMatic:** the PayPal Server SDK is generated by APIMatic, and its PayPal context plugin was used while building.
+
+## Run it locally
+
+You need Node 24.22.1 (`.nvmrc`), PostgreSQL 16 or later, and a PayPal developer account.
+
+1. **PayPal sandbox.** In the [developer dashboard](https://developer.paypal.com/dashboard/), create a REST app linked to
+   a US sandbox business account, and tick Invoicing, Payouts and Save payment methods. Create US sandbox personal
+   accounts for Margaret, Sarah, Tom and Rosa, and business or personal accounts for the payees. Put their addresses in
+   `src/lib/demo/accounts.ts`.
+2. **Environment.** `cp .env.example .env` and fill it in. `PAYPAL_ENV` must be `sandbox` (the app refuses to start
+   otherwise). `LLM_API_KEY` is optional: without it the template note is used.
+3. **Install and run:**
+
+   ```sh
+   nvm use
+   npm ci
+   createdb secondlook          # or point DATABASE_URL at any Postgres
+   npm run db:migrate
+   npm run dev                  # http://localhost:3000
+   ```
+
+4. **Checks:** `npm run check` runs the type check, lint and tests. The tests replay recorded PayPal and Anthropic
+   answers from `test/fixtures/` and never call a live API.
+
+Useful scripts: `scripts/sandbox/*.mjs` are small runs against the PayPal sandbox (each records what PayPal answered),
+and `node --env-file=.env scripts/dev/hold-for-test.mjs` gives the newest demo family a real held payment without a
+PayPal login.
+
+## Deploy on Render
+
+`render.yaml` is a Blueprint: an always-on web service, a Postgres database and the close-the-week workflow. In the
+Render dashboard choose **New → Blueprint**, pick this repository, and paste the secret values it asks for. Then register
+the webhook with `node --env-file=.env scripts/sandbox/create-webhook.mjs https://<your-service>.onrender.com` and set the
+printed ID as `PAYPAL_WEBHOOK_ID`.
+
+## Project layout
+
+```
+src/app/            parent, family, aide and ledger screens; PayPal return and webhook routes
+src/lib/            bills (the money path), care (closing the week), risk rules, PayPal client, AI note, caps
+src/components/     the quilt components shared by every screen
+db/migrations/      SQL migrations
+workflows/          the Render Workflows task
+scripts/            migrations, sandbox runs, dev helpers
+test/               unit tests and recorded fixtures
+```
+
+## License
+
+[MIT](LICENSE)
