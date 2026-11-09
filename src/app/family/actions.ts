@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { captureAndPay, loadRequest, moveRequest, releaseHold } from "@/lib/bills";
+import { closeWeek } from "@/lib/care";
 import { db } from "@/lib/db";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily } from "@/lib/family";
@@ -38,6 +39,23 @@ export async function decide(formData: FormData): Promise<void> {
   } catch (err) {
     // The decision is saved; the PayPal step is retried on the next look. Log PayPal's debug_id, never bodies.
     console.error("carrying out a family decision failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);
+  }
+  redirect(back);
+}
+
+/** Sarah or Tom closes the care week: Rosa is paid by PayPal now, and each of them gets an invoice for their share. */
+export async function closeCareWeek(formData: FormData): Promise<void> {
+  const asTom = formData.get("as") === "tom";
+  const back = asTom ? "/family?as=tom&tab=care" : "/family?tab=care";
+  const sessionId = await getSessionId();
+  const family = await ensureFamily(sessionId);
+  const member = family.members.find((m) => m.role === "child" && m.name === (asTom ? "Tom" : "Sarah"));
+  if (!member) redirect(back);
+  try {
+    await closeWeek(family, sessionId, member.id);
+  } catch (err) {
+    // The period and its PayPal keys are saved; the next look finishes the PayPal steps.
+    console.error("closing the care week failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);
   }
   redirect(back);
 }

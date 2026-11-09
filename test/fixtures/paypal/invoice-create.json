@@ -1,0 +1,130 @@
+{
+  "saved_at": "2026-11-06T06:27:04.808Z",
+  "method": "POST",
+  "path": "/v2/invoicing/invoices",
+  "request_id": "228f900f-5a27-4e21-8036-7f9533d6dc9f",
+  "http_status": 201,
+  "debug_id": "ca56207b88c72",
+  "ms": 1682,
+  "response": {
+    "id": "INV2-7WL8-A4UN-4A72-PHBF",
+    "status": "DRAFT",
+    "detail": {
+      "currency_code": "USD",
+      "note": "Your share of Margaret's care this week (gate test).",
+      "category_code": "SHIPPABLE",
+      "invoice_number": "SL-GATE-20261106T062703",
+      "invoice_date": "2026-11-05",
+      "payment_term": {
+        "term_type": "DUE_ON_RECEIPT"
+      },
+      "viewed_by_recipient": false,
+      "group_draft": false,
+      "metadata": {
+        "create_time": "2026-11-06T06:27:04Z",
+        "last_update_time": "2026-11-06T06:27:04Z",
+        "created_by_flow": "REGULAR_SINGLE",
+        "recipient_view_url": "https://www.sandbox.paypal.com/invoice/p/#7WL8A4UN4A72PHBF",
+        "invoicer_view_url": "https://www.sandbox.paypal.com/invoice/details/INV2-7WL8-A4UN-4A72-PHBF",
+        "caller_type": "API_V2_INVOICE",
+        "spam_info": {}
+      },
+      "archived": false
+    },
+    "invoicer": {
+      "business_name": "Second Look",
+      "email_address": "<secondlook>"
+    },
+    "primary_recipients": [
+      {
+        "billing_info": {
+          "name": {
+            "given_name": "Sarah",
+            "full_name": "Sarah"
+          },
+          "email_address": "<sarah>"
+        }
+      }
+    ],
+    "items": [
+      {
+        "id": "ITEM-9TR52990H2416312V",
+        "name": "Care for Margaret, week of Nov 2",
+        "quantity": "1",
+        "unit_amount": {
+          "currency_code": "USD",
+          "value": "75.00"
+        },
+        "unit_of_measure": "QUANTITY"
+      }
+    ],
+    "configuration": {
+      "tax_calculated_after_discount": false,
+      "tax_inclusive": false,
+      "allow_tip": false,
+      "allow_only_pay_by_bank": false,
+      "allow_vba_payments": false,
+      "save_item_for_future": true,
+      "template_id": "TEMP-8NL84258H3818542K"
+    },
+    "amount": {
+      "breakdown": {
+        "item_total": {
+          "currency_code": "USD",
+          "value": "75.00"
+        },
+        "discount": {
+          "invoice_discount": {
+            "amount": {
+              "currency_code": "USD",
+              "value": "0.00"
+            }
+          },
+          "item_discount": {
+            "currency_code": "USD",
+            "value": "0.00"
+          }
+        },
+        "tax_total": {
+          "currency_code": "USD",
+          "value": "0.00"
+        }
+      },
+      "currency_code": "USD",
+      "value": "75.00"
+    },
+    "due_amount": {
+      "currency_code": "USD",
+      "value": "75.00"
+    },
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v2/invoicing/invoices/INV2-7WL8-A4UN-4A72-PHBF",
+        "rel": "self",
+        "method": "GET"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/invoicing/invoices/INV2-7WL8-A4UN-4A72-PHBF/send",
+        "rel": "send",
+        "method": "POST"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/invoicing/invoices/INV2-7WL8-A4UN-4A72-PHBF",
+        "rel": "replace",
+        "method": "PUT"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/invoicing/invoices/INV2-7WL8-A4UN-4A72-PHBF",
+        "rel": "delete",
+        "method": "DELETE"
+      },
+      {
+        "href": "https://api.sandbox.paypal.com/v2/invoicing/invoices/INV2-7WL8-A4UN-4A72-PHBF/payments",
+        "rel": "record-payment",
+        "method": "POST"
+      }
+    ],
+    "unilateral": false,
+    "settings": {}
+  }
+}

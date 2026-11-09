@@ -322,3 +322,85 @@ export async function getPayout(payoutBatchId: string): Promise<{ payoutBatchId:
   const { body } = await rest<PayoutBatch>("GET", `/v1/payments/payouts/${encodeURIComponent(payoutBatchId)}`);
   return { payoutBatchId: body.batch_header?.payout_batch_id ?? payoutBatchId, batchStatus: body.batch_header?.batch_status ?? "UNKNOWN" };
 }
+
+// ---- Invoicing v2 (REST; not in the server SDK) ----
+// Invoicing ignores PayPal-Request-Id (measured 6 Nov): idempotency comes from the fixed invoice number we store first,
+// a search when PayPal says the number already exists, and sending only drafts. A request ID is still sent (hard rule 4).
+
+interface InvoiceBody {
+  id?: string;
+  status?: string;
+  detail?: { metadata?: { recipient_view_url?: string } };
+}
+
+export interface InvoiceState {
+  invoiceId: string;
+  status: string;
+  payUrl: string | null;
+}
+
+const invoiceState = (body: InvoiceBody, fallbackId = ""): InvoiceState => ({
+  invoiceId: body.id ?? fallbackId,
+  status: body.status ?? "UNKNOWN",
+  payUrl: body.detail?.metadata?.recipient_view_url ?? null,
+});
+
+export async function findInvoiceByNumber(invoiceNumber: string, requestId: string): Promise<InvoiceState | null> {
+  const { body } = await rest<{ items?: InvoiceBody[] }>("POST", "/v2/invoicing/search-invoices?page=1&page_size=5&total_required=false", {
+    requestId,
+    body: { invoice_number: invoiceNumber },
+  });
+  const hit = body.items?.[0];
+  return hit?.id ? getInvoice(hit.id) : null;
+}
+
+/** A draft invoice from Second Look for one sibling's share, or the one already created under the same number. */
+export async function createInvoice(input: {
+  invoiceNumber: string;
+  requestId: string;
+  recipientName: string;
+  recipientEmail: string;
+  invoicerEmail: string;
+  amountCents: number;
+  itemName: string;
+  note: string;
+}): Promise<InvoiceState> {
+  try {
+    const { body } = await rest<InvoiceBody>("POST", "/v2/invoicing/invoices", {
+      requestId: input.requestId,
+      body: {
+        detail: {
+          invoice_number: input.invoiceNumber,
+          currency_code: "USD",
+          note: input.note,
+          payment_term: { term_type: "DUE_ON_RECEIPT" },
+        },
+        invoicer: { business_name: "Second Look", email_address: input.invoicerEmail },
+        primary_recipients: [{ billing_info: { name: { given_name: input.recipientName }, email_address: input.recipientEmail } }],
+        items: [{ name: input.itemName, quantity: "1", unit_amount: { currency_code: "USD", value: toAmount(input.amountCents) }, unit_of_measure: "QUANTITY" }],
+      },
+    });
+    return invoiceState(body);
+  } catch (err) {
+    if (!(err instanceof PayPalError) || err.issue !== "DUPLICATE_INVOICE_NUMBER") throw err;
+    const found = await findInvoiceByNumber(input.invoiceNumber, `${input.requestId.slice(0, 30)}-find`);
+    if (!found) throw err;
+    return found;
+  }
+}
+
+/** Sends a draft without an email (the family screen links to PayPal's page instead); anything else is left alone. */
+export async function sendInvoice(input: { invoiceId: string; requestId: string }): Promise<InvoiceState> {
+  const current = await getInvoice(input.invoiceId);
+  if (current.status !== "DRAFT") return current;
+  await rest("POST", `/v2/invoicing/invoices/${encodeURIComponent(input.invoiceId)}/send`, {
+    requestId: input.requestId,
+    body: { send_to_recipient: false, send_to_invoicer: false },
+  });
+  return getInvoice(input.invoiceId);
+}
+
+export async function getInvoice(invoiceId: string): Promise<InvoiceState> {
+  const { body } = await rest<InvoiceBody>("GET", `/v2/invoicing/invoices/${encodeURIComponent(invoiceId)}`);
+  return invoiceState(body, invoiceId);
+}

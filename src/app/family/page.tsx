@@ -15,12 +15,13 @@ import { Frame } from "@/components/quilt/Frame";
 import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
 import { sweepExpiredHolds } from "@/lib/bills";
+import { getCare, refreshCare } from "@/lib/care";
 import { cancelsAt, familyCard, type SecondLook } from "@/lib/copy/family";
-import { ensureFamily, getCareWeek, getSecondLooks } from "@/lib/family";
-import { formatUsd } from "@/lib/money";
+import { ensureFamily, getSecondLooks } from "@/lib/family";
 import type { RuleId } from "@/lib/risk";
 import { getSessionId } from "@/lib/session";
 import { decide } from "./actions";
+import { CareNeedsCard, CareTab } from "./CareCards";
 import styles from "./family.module.css";
 
 export const dynamic = "force-dynamic";
@@ -93,7 +94,8 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
   await sweepExpiredHolds(family, sessionId);
-  const [looks, care] = await Promise.all([getSecondLooks(family), getCareWeek(family)]);
+  await refreshCare(family, sessionId);
+  const [looks, care] = await Promise.all([getSecondLooks(family), getCare(family)]);
   const waiting = looks.filter((l) => l.status === "held");
   const decided = looks.filter((l) => l.status !== "held");
   const href = (t: Tab) => {
@@ -117,21 +119,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                 waiting.map((item) => <SecondLookCard key={item.id} item={item} as={as} />)
               )}
 
-              <article className={`${styles.card} ${styles.care}`}>
-                <Stitch kind="sewn" />
-                <div className={styles.cardHead}>
-                  <StateMark state="settled" fabric="var(--rosa)" />
-                  <div>
-                    <h2 className={styles.cardTitle}>This week&rsquo;s care</h2>
-                    <p className={styles.when}>
-                      {care.aide} came {care.visits} {care.visits === 1 ? "time" : "times"} · {formatUsd(care.totalCents)} so far
-                    </p>
-                  </div>
-                </div>
-                <Link href={href("care")} className={styles.secondary}>
-                  See the week
-                </Link>
-              </article>
+              <CareNeedsCard care={care} as={as} careHref={href("care")} />
 
               {decided.length > 0 && (
                 <>
@@ -153,15 +141,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
             </>
           )}
 
-          {tab === "care" && (
-            <>
-              <h1 className={styles.heading}>Care</h1>
-              <p className={styles.empty}>
-                {care.aide} came {care.visits} {care.visits === 1 ? "time" : "times"} this week, {formatUsd(care.totalCents)} so far. Closing the
-                week pays {care.aide} and sends each of you an invoice for your share.
-              </p>
-            </>
-          )}
+          {tab === "care" && <CareTab care={care} as={as} />}
         </div>
 
         <nav className={styles.tabbar} aria-label="Family">

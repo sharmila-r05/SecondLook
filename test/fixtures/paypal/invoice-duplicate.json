@@ -1,0 +1,29 @@
+{
+  "saved_at": "2026-11-06T06:27:05.984Z",
+  "method": "POST",
+  "path": "/v2/invoicing/invoices",
+  "request_id": "da417dab-15b8-4e4c-80a6-4ea88d7734fc",
+  "http_status": 422,
+  "debug_id": "ca56207c32f35",
+  "ms": 1174,
+  "response": {
+    "name": "UNPROCESSABLE_ENTITY",
+    "message": "The requested action could not be performed, semantically incorrect, or failed business validation.",
+    "debug_id": "ca56207c32f35",
+    "details": [
+      {
+        "field": "/detail/invoice_number",
+        "value": "SL-GATE-20261106T062703",
+        "location": "body",
+        "issue": "DUPLICATE_INVOICE_NUMBER",
+        "description": "Invoice number is duplicate."
+      }
+    ],
+    "links": [
+      {
+        "href": "https://developer.paypal.com/docs/api/invoicing/#errors",
+        "method": "GET"
+      }
+    ]
+  }
+}

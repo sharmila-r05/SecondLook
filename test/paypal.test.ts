@@ -7,8 +7,10 @@ import {
   authorizeOrder,
   captureAuthorization,
   createAuthorizeOrder,
+  createInvoice,
   createPayout,
   PayPalError,
+  sendInvoice,
   setPayPalTransportForTests,
   voidAuthorization,
 } from "@/lib/paypal";
@@ -159,5 +161,50 @@ describe("payouts (REST)", () => {
     expect(result.batchStatus).toBe("SUCCESS");
     expect(sent.map((s) => s.method)).toEqual(["POST", "GET"]);
     expect(sent[1]?.url).toContain(`/v1/payments/payouts/${result.payoutBatchId}`);
+  });
+});
+
+describe("Invoicing (replayed)", () => {
+  const draft = {
+    invoiceNumber: "SL-GATE-20261106T062703",
+    requestId: "7d0c9a52-8a8e-4c37-9a4e-1f8a2f1d2b11",
+    recipientName: "Sarah",
+    recipientEmail: "sarah@example.test",
+    invoicerEmail: "secondlook@example.test",
+    amountCents: 7500,
+    itemName: "Care for Margaret, Nov 5–9",
+    note: "Your share of Rosa's pay.",
+  };
+
+  it("creates a draft with the fixed invoice number and returns its pay link", async () => {
+    const sent = replay("invoice-create");
+    const invoice = await createInvoice(draft);
+    expect(invoice).toMatchObject({ invoiceId: "INV2-7WL8-A4UN-4A72-PHBF", status: "DRAFT" });
+    expect(invoice.payUrl).toMatch(/^https:\/\/www\.sandbox\.paypal\.com\/invoice\/p\/#/);
+    expect(sent[0]).toMatchObject({ method: "POST", requestId: draft.requestId });
+    expect(sent[0]?.body).toMatchObject({ detail: { invoice_number: draft.invoiceNumber, currency_code: "USD" }, items: [{ unit_amount: { value: "75.00" } }] });
+  });
+
+  it("finds the invoice it already created when PayPal says the number exists", async () => {
+    const sent = replay("invoice-duplicate", "invoice-search", "invoice-get");
+    const invoice = await createInvoice(draft);
+    expect(invoice).toMatchObject({ invoiceId: "INV2-7WL8-A4UN-4A72-PHBF", status: "UNPAID" });
+    expect(sent.map((c) => c.method)).toEqual(["POST", "POST", "GET"]);
+    expect(sent[1]?.body).toEqual({ invoice_number: draft.invoiceNumber });
+    expect(new Set(sent.filter((c) => c.requestId).map((c) => c.requestId)).size).toBe(2);
+  });
+
+  it("sends a draft without email, then reads it back as unpaid", async () => {
+    const sent = replay("invoice-create", "invoice-send", "invoice-get");
+    const invoice = await sendInvoice({ invoiceId: "INV2-7WL8-A4UN-4A72-PHBF", requestId: "7d0c9a52-8a8e-4c37-9a4e-1f8a2f1d-send" });
+    expect(invoice.status).toBe("UNPAID");
+    expect(sent[1]).toMatchObject({ method: "POST", body: { send_to_recipient: false, send_to_invoicer: false } });
+  });
+
+  it("doesn't send an invoice twice", async () => {
+    const sent = replay("invoice-get");
+    const invoice = await sendInvoice({ invoiceId: "INV2-7WL8-A4UN-4A72-PHBF", requestId: "7d0c9a52-8a8e-4c37-9a4e-1f8a2f1d-send" });
+    expect(invoice.status).toBe("UNPAID");
+    expect(sent).toHaveLength(1);
   });
 });

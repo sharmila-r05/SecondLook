@@ -173,6 +173,95 @@
   }
 }
 
+.primary,
+.payLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--plum-900);
+  color: var(--paper);
+  font-size: 1.0625rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.primary:hover,
+.payLink:hover {
+  filter: brightness(1.25);
+}
+
+.payIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+}
+
+.textLink {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid rgb(26 23 32 / 0.12);
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+.total {
+  font-weight: 800;
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.status {
+  color: var(--ink-muted);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.status[data-paid] {
+  color: var(--rosa);
+  font-weight: 800;
+}
+
+.explain {
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+}
+
 .expires {
   color: var(--ink-muted);
   font-size: 0.9375rem;
@@ -237,7 +326,9 @@
 @media (prefers-reduced-motion: reduce) {
   .deny,
   .approve,
-  .secondary {
+  .secondary,
+  .primary,
+  .payLink {
     transition: none;
   }
 }

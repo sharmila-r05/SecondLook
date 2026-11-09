@@ -154,12 +154,12 @@ export async function getSecondLooks(family: Family): Promise<SecondLook[]> {
   });
 }
 
-/** This week's visits (Monday to today, in Margaret's time zone) and what they come to. */
+/** Rosa's visits since the week was last closed (up to today, in Margaret's time zone) and what they come to. */
 export async function getCareWeek(family: Family, now = new Date()): Promise<{ visits: number; totalCents: number; aide: string }> {
   const [row] = await db()<{ visits: string; total: string | null }[]>`
     select count(*) as visits, sum(rate_cents) as total from visits
     where family_id = ${family.id}
-      and visit_date >= date_trunc('week', (${now}::timestamptz at time zone ${PARENT_TIME_ZONE}))::date
-      and visit_date <= (${now}::timestamptz at time zone ${PARENT_TIME_ZONE})::date`;
+      and visit_date <= (${now}::timestamptz at time zone ${PARENT_TIME_ZONE})::date
+      and visit_date > coalesce((select max(end_date) from care_periods where family_id = ${family.id}), '-infinity'::date)`;
   return { visits: Number(row?.visits ?? 0), totalCents: Number(row?.total ?? 0), aide: memberNamed(family, "aide") ?? "The aide" };
 }

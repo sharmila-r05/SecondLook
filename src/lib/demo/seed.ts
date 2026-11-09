@@ -2,7 +2,7 @@
 // no money moves: anything in the ledger happened for real, in the PayPal sandbox, during this session.
 
 import type postgres from "postgres";
-import { addDays, localDate, weekdayIndex } from "@/lib/time";
+import { addDays, localDate } from "@/lib/time";
 import { SANDBOX_EMAILS } from "./accounts";
 
 /** Rosa is paid $50.00 a visit. */
@@ -10,7 +10,7 @@ export const VISIT_RATE_CENTS = 5000;
 /** Margaret's per-payment limit: anything over $300.00 goes to family for a second look. */
 export const PER_PAYMENT_LIMIT_CENTS = 30000;
 
-const ROSA_DAYS = [0, 2, 4]; // Monday, Wednesday, Friday
+const ROSA_EARLIER_VISITS = [-4, -2]; // days before today: her week is never empty, whatever the weekday
 
 export async function seedFamily(tx: postgres.TransactionSql, sessionId: string, now = new Date()): Promise<string> {
   const [family] = await tx<{ id: string }[]>`
@@ -59,11 +59,10 @@ export async function seedFamily(tx: postgres.TransactionSql, sessionId: string,
       },
     ])}`;
 
-  // Rosa's visits earlier this week, so her week isn't empty. Visits move no money until the week closes.
-  // November and December are Eastern Standard Time (UTC-5).
+  // Rosa's two earlier visits, so a visitor on any weekday sees a week worth closing. Visits move no money until the
+  // week closes. November and December are Eastern Standard Time (UTC-5).
   const today = localDate(now);
-  const monday = addDays(today, -weekdayIndex(now));
-  const earlier = ROSA_DAYS.filter((day) => day < weekdayIndex(now)).map((day) => addDays(monday, day));
+  const earlier = ROSA_EARLIER_VISITS.map((offset) => addDays(today, offset));
   for (const date of earlier) {
     await tx`
       insert into visits (demo_session_id, family_id, aide_member_id, visit_date, confirmed_by, rate_cents,

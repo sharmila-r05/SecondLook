@@ -1,0 +1,14 @@
+{
+  "saved_at": "2026-11-06T06:27:08.099Z",
+  "method": "POST",
+  "path": "/v2/invoicing/invoices/INV2-7WL8-A4UN-4A72-PHBF/send",
+  "request_id": "2fdb3146-2707-4a44-a5ca-a78049a3f14d",
+  "http_status": 200,
+  "debug_id": "ca56207d0ec28",
+  "ms": 1066,
+  "response": {
+    "href": "https://www.sandbox.paypal.com/invoice/p/#INV2-7WL8-A4UN-4A72-PHBF",
+    "rel": "payer-view",
+    "method": "GET"
+  }
+}
