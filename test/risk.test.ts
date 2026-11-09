@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluate, type RiskInput } from "@/lib/risk";
+import { chipUsd, evaluate, type RiskInput } from "@/lib/risk";
 
 const electric = { name: "Hollowbrook Electric", known: true, perPaymentLimitCents: 30000, usualAmountCents: 8400 };
 const input = (over: Partial<RiskInput>): RiskInput => ({
@@ -28,7 +28,23 @@ describe("evaluate: the demo's two sentences", () => {
     );
     expect(result.hold).toBe(true);
     expect(result.rules.map((r) => r.id)).toEqual(["new_payee", "over_limit", "scam_wording", "daily_total"]);
-    expect(result.rules.map((r) => r.chip)).toEqual(["New payee", "Over $300.00 limit", "Tech-support story", "Over $500.00 today"]);
+    expect(result.rules.map((r) => r.chip)).toEqual(["New payee", "Over $300 limit", "Tech-support story", "Over $500 today"]);
+  });
+});
+
+describe("chipUsd", () => {
+  it("drops zero cents and keeps any others, with thousands separators", () => {
+    expect(chipUsd(30000)).toBe("$300");
+    expect(chipUsd(150000)).toBe("$1,500");
+    expect(chipUsd(30050)).toBe("$300.50");
+    expect(chipUsd(5)).toBe("$0.05");
+    expect(chipUsd(0)).toBe("$0");
+  });
+
+  it("puts a limit with cents on the chip exactly, and keeps cents in the fact", () => {
+    const rules = evaluate(input({ amountCents: 30051, text: "pay", payee: { ...electric, perPaymentLimitCents: 30050, usualAmountCents: null } })).rules;
+    expect(rules.map((r) => r.chip)).toEqual(["Over $300.50 limit"]);
+    expect(rules[0]?.fact).toBe("$300.51 is over her $300.50 limit");
   });
 });
 

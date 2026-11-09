@@ -22,7 +22,7 @@ try {
   const amountCents = 150000;
   const rules = [
     { id: "new_payee", chip: "New payee", fact: "Tech Support Line isn’t on the family’s list" },
-    { id: "over_limit", chip: "Over $300.00 limit", fact: "$1,500.00 is over her $300.00 limit" },
+    { id: "over_limit", chip: "Over $300 limit", fact: "$1,500.00 is over her $300.00 limit" },
     { id: "scam_wording", chip: "Tech-support story", fact: "She mentioned “hacked”" },
   ];
   const note = rules.map((r) => `${r.fact}.`).join(" ");

@@ -58,6 +58,12 @@ export function normalize(text: string): string {
     .trim();
 }
 
+/** A chip's amount: whole dollars when there are no cents ("$300"), otherwise exact ("$300.50"). Display only. */
+export function chipUsd(cents: number): string {
+  const full = formatUsd(cents);
+  return cents % 100 === 0 ? full.slice(0, -3) : full;
+}
+
 function containsPhrase(normalized: string, phrase: string): boolean {
   const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`(^|[^a-z0-9'])${escaped}($|[^a-z0-9'])`).test(normalized);
@@ -75,7 +81,7 @@ export function evaluate(input: RiskInput, policy: RiskPolicy = DEFAULT_POLICY):
 
   const limit = payee?.perPaymentLimitCents ?? policy.defaultLimitCents;
   if (amountCents > limit) {
-    rules.push({ id: "over_limit", chip: `Over ${formatUsd(limit)} limit`, fact: `${amount} is over her ${formatUsd(limit)} limit` });
+    rules.push({ id: "over_limit", chip: `Over ${chipUsd(limit)} limit`, fact: `${amount} is over her ${formatUsd(limit)} limit` });
   }
 
   const usual = payee?.usualAmountCents;
@@ -98,7 +104,7 @@ export function evaluate(input: RiskInput, policy: RiskPolicy = DEFAULT_POLICY):
   if (input.todaysTotalCents + amountCents > policy.dailyLimitCents) {
     rules.push({
       id: "daily_total",
-      chip: `Over ${formatUsd(policy.dailyLimitCents)} today`,
+      chip: `Over ${chipUsd(policy.dailyLimitCents)} today`,
       fact: `${formatUsd(input.todaysTotalCents + amountCents)} today with this payment, over her ${formatUsd(policy.dailyLimitCents)} daily limit`,
     });
   }

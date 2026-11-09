@@ -44,7 +44,7 @@ function bill(over: Partial<BillRow> & Pick<BillRow, "id" | "status" | "createdA
 
 const RULES = [
   { id: "new_payee" as const, chip: "New payee", fact: "Tech Support Line isn’t on the family’s list" },
-  { id: "over_limit" as const, chip: "Over $300.00 limit", fact: "$1,500.00 is over her $300.00 limit" },
+  { id: "over_limit" as const, chip: "Over $300 limit", fact: "$1,500.00 is over her $300.00 limit" },
 ];
 
 /** One whole money flow of each kind, the way bills.ts and the weekly close write them. */
@@ -148,7 +148,7 @@ describe("buildLedger: the quilt", () => {
 
   it("bastes a held payment, says why, and opens the panel on it", () => {
     const b = block(ledger, "bill:b-held");
-    expect(b).toMatchObject({ tone: "waiting", label: "Held for a second look", why: ["New payee", "Over $300.00 limit"] });
+    expect(b).toMatchObject({ tone: "waiting", label: "Held for a second look", why: ["New payee", "Over $300 limit"] });
     expect(b.story.at(-1)?.text).toBe("If nobody answers, the hold cancels itself at 10:20 am.");
     expect(ledger.selected).toBe("bill:b-held");
   });
