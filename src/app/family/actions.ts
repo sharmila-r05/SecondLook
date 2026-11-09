@@ -1,12 +1,15 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { captureAndPay, loadRequest, moveRequest, releaseHold } from "@/lib/bills";
+import { after } from "next/server";
+import { type BillRequest, captureAndPay, loadRequest, moveRequest, releaseHold } from "@/lib/bills";
 import { closeWeek } from "@/lib/care";
+import { decidedMessage } from "@/lib/copy/push";
 import { db } from "@/lib/db";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily } from "@/lib/family";
 import { PayPalError } from "@/lib/paypal";
+import { notifyChildren } from "@/lib/push";
 import { getSessionId } from "@/lib/session";
 
 /**
@@ -26,15 +29,22 @@ export async function decide(formData: FormData): Promise<void> {
   if (!member) redirect(back);
 
   const sql = db();
+  // The other sibling's waiting alert is replaced by who answered, after the response (never in the money path).
+  const tellTheOther = (bill: BillRequest) =>
+    after(() => notifyChildren(family, sessionId, decidedMessage(bill, member.name, decision), { except: member.id }));
   try {
     if (decision === "approve") {
       if (await moveRequest(sql, requestId, "held", "approved_by_family", { decidedBy: member.id })) {
         await recordEvent(sql, family, sessionId, "request:approved", { requestId, by: member.name });
-        await captureAndPay(family, sessionId, await loadRequest(sql, family, requestId));
+        const bill = await loadRequest(sql, family, requestId);
+        tellTheOther(bill);
+        await captureAndPay(family, sessionId, bill);
       }
     } else if (await moveRequest(sql, requestId, "held", "denied", { decidedBy: member.id })) {
       await recordEvent(sql, family, sessionId, "request:denied", { requestId, by: member.name });
-      await releaseHold(family, sessionId, await loadRequest(sql, family, requestId));
+      const bill = await loadRequest(sql, family, requestId);
+      tellTheOther(bill);
+      await releaseHold(family, sessionId, bill);
     }
   } catch (err) {
     // The decision is saved; the PayPal step is retried on the next look. Log PayPal's debug_id, never bodies.

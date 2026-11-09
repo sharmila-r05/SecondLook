@@ -1,9 +1,11 @@
 import { after } from "next/server";
 import { improveHeldNote } from "@/lib/ai-note";
 import { finishApproval } from "@/lib/bills";
+import { holdMessage } from "@/lib/copy/push";
 import { ensureFamily } from "@/lib/family";
 import { templateNote } from "@/lib/note";
 import { PayPalError } from "@/lib/paypal";
+import { notifyChildren } from "@/lib/push";
 import { seeOther } from "@/lib/redirect";
 import { getSessionId } from "@/lib/session";
 
@@ -21,8 +23,12 @@ export async function GET(request: Request) {
   const family = await ensureFamily(sessionId);
   try {
     const bill = await finishApproval(family, sessionId, orderId, HOLD_MINUTES, async (held) => templateNote(held));
-    // The template note is already saved; Claude's replaces it after Margaret has her answer.
-    if (bill.status === "held") after(() => improveHeldNote(family, sessionId, bill.id));
+    if (bill.status === "held") {
+      // Sarah's and Tom's phones buzz once Margaret has her answer; push never holds up a money step.
+      after(() => notifyChildren(family, sessionId, holdMessage(bill, HOLD_MINUTES)));
+      // The template note is already saved; Claude's replaces it after Margaret has her answer.
+      after(() => improveHeldNote(family, sessionId, bill.id));
+    }
     return seeOther("/parent");
   } catch (err) {
     // Log PayPal's debug_id, never bodies or emails.
