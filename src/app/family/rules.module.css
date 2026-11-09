@@ -1,0 +1,499 @@
+/* The Rules tab: the family's own rules as short forms on the screen's settled cards. Fields are white patches on the
+   card with a stitch-grey edge; Save is plum, outlined until something changes, solid once there is something to
+   save. Text sizes stay on the family screen's scale (30 / 19 / 17 / 15). */
+
+.section {
+  gap: 16px;
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.group {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Floated, so the legend is an ordinary grid item instead of sitting in the fieldset's top edge. */
+.legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+  color: var(--ink);
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+/* A rule: what it is on the left, its choice on the right, ruled off from the one above like the care rows. */
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 14px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid rgb(26 23 32 / 0.12);
+}
+
+/* The first rule sits right under the card's title. */
+legend + .field {
+  padding-top: 2px;
+  border-top: 0;
+}
+
+.field[data-stacked] {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.field[data-stacked] .select {
+  width: 100%;
+}
+
+.label {
+  display: block;
+  color: var(--ink);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.select,
+.money {
+  min-height: 48px;
+  border-radius: 10px;
+  background-color: var(--paper);
+  box-shadow: inset 0 0 0 1.5px var(--stitch);
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.select {
+  min-width: 128px;
+  max-width: 100%;
+  padding: 0 40px 0 14px;
+  border: 0;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233b1f3a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 14px center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.select:hover,
+.money:hover {
+  box-shadow: inset 0 0 0 2px var(--plum-900);
+}
+
+/* A typed amount: "$" and the figure inside one field, ringed as a whole when focused. */
+.money {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  padding: 0 4px 0 14px;
+}
+
+.money:focus-within {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow:
+    inset 0 0 0 2px var(--plum-900),
+    0 0 0 7px var(--focus-ring);
+}
+
+.moneyInput {
+  width: 7ch;
+  min-height: 46px;
+  padding: 0 10px 0 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.moneyInput:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.moneyInput:disabled {
+  cursor: not-allowed;
+}
+
+/* What always gets a second look: the same chips the family sees on a held payment. */
+.always {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0 14px;
+  border-top: 1px solid rgb(26 23 32 / 0.12);
+}
+
+.always .hint {
+  margin-top: 0;
+}
+
+.group + .group {
+  padding-top: 16px;
+  border-top: 2px solid rgb(26 23 32 / 0.14);
+}
+
+.radios {
+  display: grid;
+  gap: 8px;
+  padding: 6px 0 14px;
+}
+
+.radio {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1.5px rgb(26 23 32 / 0.22);
+  cursor: pointer;
+  transition: box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.radio:hover {
+  box-shadow: inset 0 0 0 1.5px var(--stitch);
+}
+
+.radio:has(:checked) {
+  box-shadow: inset 0 0 0 2.5px var(--plum-900);
+}
+
+.radio input {
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  accent-color: var(--plum-900);
+  cursor: pointer;
+}
+
+.radioLabel {
+  display: block;
+  font-weight: 700;
+}
+
+/* Mom's bills: a tick, the payee and what the bill is, and what it usually comes to. */
+.bills {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bill {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid rgb(26 23 32 / 0.12);
+}
+
+.bill:first-child {
+  padding-top: 2px;
+  border-top: 0;
+}
+
+.check {
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  accent-color: var(--plum-900);
+  cursor: pointer;
+}
+
+.billText {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.billText > .label {
+  cursor: pointer;
+}
+
+.usual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 10px;
+  color: var(--ink-muted);
+}
+
+.usual[data-off] .money {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1.5px rgb(26 23 32 / 0.22);
+  color: var(--ink-muted);
+}
+
+.usual[data-off] {
+  color: var(--ink-muted);
+}
+
+/* Save, and what it says beside it. */
+.saveRow {
+  display: grid;
+  gap: 12px;
+}
+
+.saveLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.save,
+.saveReady {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 22px;
+  border: 2px solid var(--plum-900);
+  border-radius: 12px;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    filter 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.save {
+  background: var(--paper);
+  color: var(--plum-900);
+}
+
+.save:hover {
+  filter: brightness(0.96);
+}
+
+.saveReady {
+  background: var(--plum-900);
+  color: var(--paper);
+}
+
+.saveReady:hover {
+  filter: brightness(1.25);
+}
+
+.save:disabled,
+.saveReady:disabled {
+  cursor: progress;
+  filter: none;
+}
+
+.saveNote {
+  display: flex;
+  flex: 1 1 16ch;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+
+.saveNote[data-saved] {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.savedMark {
+  flex: none;
+}
+
+.savedMark svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+/* Why a save was refused: plain words on a white patch with an ink edge (rose stays for what waits on family). */
+.error {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 2px var(--ink);
+  color: var(--ink);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.errorIcon {
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+}
+
+/* The family: each person's mark in their own fabric once they're in, an open dashed ring until then. */
+.people {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid rgb(26 23 32 / 0.12);
+}
+
+.person:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.person .hint {
+  margin-top: 0;
+}
+
+.personName {
+  font-weight: 700;
+}
+
+.relation {
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+
+.inviteLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 20px;
+  border: 2px solid var(--plum-900);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--plum-900);
+  font-weight: 800;
+  text-decoration: none;
+  transition: filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inviteLink:hover {
+  filter: brightness(0.96);
+}
+
+.linkIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.demoNote {
+  padding-top: 12px;
+  border-top: 1px solid rgb(26 23 32 / 0.12);
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+}
+
+.signOut {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin: 4px 0 0;
+  padding: 0 4px;
+}
+
+.signOut .hint {
+  margin: 0;
+}
+
+.signOutButton {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--stitch);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.signOutButton:hover {
+  border-color: var(--plum-900);
+  background: var(--paper);
+}
+
+/* The family card: at the foot of the column, or beside the phone on a wide desktop (as the phone QR code does), on
+   the phone screen's own ground so its words keep their contrast off the plum. */
+.familyColumn {
+  display: grid;
+  gap: 16px;
+}
+
+.familySide {
+  display: none;
+}
+
+@media (min-width: 1100px) and (hover: hover) {
+  .familyColumn {
+    display: none;
+  }
+
+  .familySide {
+    position: sticky;
+    top: 24px;
+    display: grid;
+    grid-column: 3;
+    gap: 14px;
+    align-self: start;
+    max-width: 360px;
+    padding: 14px 14px 18px;
+    border-radius: var(--radius-block);
+    background: var(--ground);
+    font-size: 1.0625rem;
+    line-height: 1.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .select,
+  .money,
+  .radio,
+  .save,
+  .saveReady,
+  .inviteLink {
+    transition: none;
+  }
+}

@@ -1,4 +1,4 @@
-import { CircleDollarSign, HeartHandshake, Users } from "lucide-react";
+import { CircleDollarSign, HeartHandshake, SlidersHorizontal, Users } from "lucide-react";
 import Link from "next/link";
 import { after } from "next/server";
 import { FamilyAlerts } from "@/components/push/FamilyAlerts";
@@ -19,11 +19,13 @@ import { getLedgerInput } from "@/lib/ledger-data";
 import { CareNeedsCard, CareTab } from "./CareCards";
 import { DecideButtons } from "./DecideButtons";
 import { PhoneQr, phoneQrCode } from "./PhoneQr";
+import { FamilyCard, loadRules, RulesTab } from "./RulesTab";
 import styles from "./family.module.css";
 
 export const dynamic = "force-dynamic";
 
-type Tab = "needs" | "money" | "care";
+type Tab = "needs" | "money" | "care" | "rules";
+const OTHER_TABS: readonly Tab[] = ["money", "care", "rules"];
 
 /** How long a decided payment stays where it was decided, so the card changes in place instead of jumping away. */
 const RECENT_MS = 15 * 60_000;
@@ -87,18 +89,19 @@ function SecondLookCard({ item, as, recent = false }: { item: SecondLook; as: "s
 export default async function FamilyPage({ searchParams }: { searchParams: Promise<{ as?: string; tab?: string; join?: string }> }) {
   const params = await searchParams;
   const as = params.as === "tom" ? "tom" : "sarah";
-  const tab: Tab = params.tab === "money" || params.tab === "care" ? params.tab : "needs";
+  const tab: Tab = OTHER_TABS.find((t) => t === params.tab) ?? "needs";
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
   requireSetUp(family);
   await sweepExpiredHolds(family, sessionId);
   after(() => sweepOtherExpiredHolds());
   await refreshCare(family, sessionId);
-  const [looks, care, ledger, qr] = await Promise.all([
+  const [looks, care, ledger, qr, rules] = await Promise.all([
     getSecondLooks(family),
     getCare(family),
     tab === "money" ? getLedgerInput(family).then((input) => buildLedger(input)) : null,
     tab === "needs" ? phoneQrCode(sessionId, as) : null,
+    tab === "rules" ? loadRules(family) : null,
   ]);
   const waiting = looks.filter((l) => l.status === "held");
   const { now, earlier } = splitLooks(looks);
@@ -164,6 +167,8 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
             )}
 
             {tab === "care" && <CareTab care={care} as={as} />}
+
+            {rules && <RulesTab family={family} as={as} data={rules} />}
           </div>
 
           <nav className={styles.tabbar} aria-label="Family">
@@ -182,9 +187,14 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
               <HeartHandshake className={styles.tabIcon} aria-hidden="true" />
               Care
             </Link>
+            <Link href={href("rules")} className={styles.tab} aria-current={tab === "rules" ? "page" : undefined}>
+              <SlidersHorizontal className={styles.tabIcon} aria-hidden="true" />
+              Rules
+            </Link>
           </nav>
         </div>
         {qr && <PhoneQr qr={qr} placement="side" />}
+        {rules && <FamilyCard family={family} as={as} data={rules} placement="side" />}
       </div>
     </Frame>
   );
