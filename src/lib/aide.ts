@@ -1,6 +1,6 @@
-// What Rosa's screen reads: her visits this week (the last seven days to today, in Margaret's time zone, the same
-// window the family's care week draws from) and whether the family has
-// closed and paid any of it. Every query filters by the family, which belongs to one demo session (hard rule 10).
+// What Rosa's screen reads: her visits this past week (the last seven days to today, in Margaret's time zone, the
+// same window the family's care week draws from) and whether the family has closed and paid any of it. Every query
+// filters by the family, which belongs to one demo session (hard rule 10).
 
 import type { AideVisit, CarePeriod } from "@/lib/copy/aide";
 import { db } from "@/lib/db";
@@ -12,9 +12,9 @@ export interface AideWeek {
   aide: Member;
   parent: string;
   today: AideVisit | null;
-  /** This week's visits before today, oldest first. */
+  /** The past week's visits before today, oldest first. */
   earlier: AideVisit[];
-  /** Every visit this week, today included. */
+  /** Every visit in the past seven days, today included. */
   visits: AideVisit[];
   periods: CarePeriod[];
 }
@@ -29,7 +29,7 @@ export async function getAideWeek(family: Family, now = new Date()): Promise<Aid
   const sql = db();
   const aide = familyAide(family);
   const today = localDate(now);
-  const monday = addDays(today, -6); // the week's first day: six days ago, so a Monday still shows her recent visits
+  const firstDay = addDays(today, -6); // the window's first day: six days ago, so a Monday still shows her recent visits
 
   const [visitRows, periodRows] = await Promise.all([
     sql<
@@ -46,7 +46,7 @@ export async function getAideWeek(family: Family, now = new Date()): Promise<Aid
       select id, visit_date::text as date, confirmed_by, rate_cents, checked_in_at, checked_out_at, created_at
       from visits
       where family_id = ${family.id} and aide_member_id = ${aide.id}
-        and visit_date between ${monday}::date and ${today}::date
+        and visit_date between ${firstDay}::date and ${today}::date
       order by visit_date`,
     sql<
       {
@@ -66,7 +66,7 @@ export async function getAideWeek(family: Family, now = new Date()): Promise<Aid
         where p.care_period_id = cp.id and p.family_id = ${family.id} and p.kind = 'payout'
           and lower(p.status) not in ('failed', 'denied', 'returned', 'blocked', 'reversed', 'refunded')
       ) payout on true
-      where cp.family_id = ${family.id} and cp.start_date <= ${today}::date and cp.end_date >= ${monday}::date
+      where cp.family_id = ${family.id} and cp.start_date <= ${today}::date and cp.end_date >= ${firstDay}::date
       order by cp.end_date`,
   ]);
 

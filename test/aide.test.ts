@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { type AideVisit, type CarePeriod, formatTimeRange, todayCard, visitRow, weekdayName, weekSummary } from "@/lib/copy/aide";
+import {
+  type AideVisit,
+  type CarePeriod,
+  dayLabel,
+  formatTimeRange,
+  todayCard,
+  visitRow,
+  weekdayName,
+  weekSummary,
+} from "@/lib/copy/aide";
 
 // November is Eastern Standard Time in Ohio: 13:30 UTC is 8:30 am.
 const visit = (date: string, over: Partial<AideVisit> = {}): AideVisit => ({
@@ -23,6 +32,19 @@ describe("formatTimeRange", () => {
   it("says both across noon", () => {
     expect(formatTimeRange(new Date("2026-11-09T16:30:00Z"), new Date("2026-11-09T17:45:00Z"))).toBe("11:30 am–12:45 pm");
   });
+
+  it("says the time once when she finished in the minute she arrived", () => {
+    const at = formatTimeRange(new Date("2026-11-09T06:27:05Z"), new Date("2026-11-09T06:27:50Z"));
+    expect(at).toMatch(/^1:27\sam$/);
+    expect(at).not.toContain("–");
+  });
+});
+
+describe("dayLabel", () => {
+  it("gives the weekday and the date, since the list runs back past last Monday", () => {
+    expect(dayLabel("2026-11-05")).toBe("Thursday, Nov 5");
+    expect(dayLabel("2026-11-11")).toBe("Wednesday, Nov 11");
+  });
 });
 
 describe("weekdayName", () => {
@@ -34,11 +56,27 @@ describe("weekdayName", () => {
 
 describe("visitRow", () => {
   it("gives the day, the hours and the pay", () => {
-    expect(visitRow(visit("2026-11-11"))).toEqual({ id: "2026-11-11", day: "Wednesday", times: "8:30–10:30 am", pay: "$50.00" });
+    expect(visitRow(visit("2026-11-11"))).toEqual({ id: "2026-11-11", day: "Wednesday, Nov 11", paid: false, times:"8:30–10:30 am", pay: "$50.00" });
+  });
+
+  it("is paid once a closed week covers it, not while the week is still closing", () => {
+    const period = (over: Partial<CarePeriod> = {}): CarePeriod => ({
+      startDate: "2026-11-09",
+      endDate: "2026-11-11",
+      status: "closed",
+      payoutCents: 10000,
+      paidAt: new Date("2026-11-11T20:00:00Z"),
+      ...over,
+    });
+    expect(visitRow(visit("2026-11-11"), [period()]).paid).toBe(true);
+    expect(visitRow(visit("2026-11-13"), [period()]).paid).toBe(false);
+    expect(visitRow(visit("2026-11-11"), [period({ status: "closing", payoutCents: null, paidAt: null })]).paid).toBe(false);
+    expect(todayCard(visit("2026-11-11"), "Margaret", [period()])).toMatchObject({ step: "done", row: { day: "Today", paid: true } });
   });
 
   it("uses when Margaret said Rosa came, for a visit Rosa didn't check in to", () => {
     const noted = visit("2026-11-11", { confirmedBy: "parent", checkedInAt: null, checkedOutAt: null, createdAt: new Date("2026-11-11T15:41:00Z") });
+    expect(visitRow(noted).paid).toBe(false);
     expect(visitRow(noted).times).toBe("10:41 am");
   });
 });
@@ -63,7 +101,7 @@ describe("todayCard", () => {
 
   it("settles into a row once the visit is done", () => {
     const done = todayCard(visit("2026-11-13", { checkedOutAt: new Date("2026-11-13T16:45:00Z") }), "Margaret");
-    expect(done).toEqual({ step: "done", row: { id: "2026-11-13", day: "Today", times: "8:30–11:45 am", pay: "$50.00" } });
+    expect(done).toEqual({ step: "done", row: { id: "2026-11-13", day: "Today", paid: false, times:"8:30–11:45 am", pay: "$50.00" } });
   });
 });
 

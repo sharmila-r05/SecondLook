@@ -4,13 +4,21 @@
 
 .phone {
   display: flex;
-  flex: 1;
+  flex: 0 0 auto;
   flex-direction: column;
   width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
+  max-width: 420px;
+  margin: 8px auto 0;
   border-radius: var(--radius-block);
   background: var(--ground);
+}
+
+/* On her phone the panel is the whole screen under the bar. */
+@media (max-width: 760px) {
+  .phone {
+    flex: 1;
+    max-width: none;
+  }
 }
 
 .screen {
@@ -36,7 +44,7 @@
 
 .subheading {
   font-size: 1.375rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.2;
 }
 
@@ -86,10 +94,20 @@
   stroke-width: 2.25;
 }
 
+/* Finishing is lighter than arriving: pale sage with plum lettering (6.4:1), edged in her sage, so it never reads
+   as a second status card under the teal one. */
 .done {
   min-height: 68px;
   padding: 16px 20px;
+  border: 2px solid var(--rosa);
+  background: #a3b092;
+  color: var(--plum-900);
   font-size: 1.375rem;
+}
+
+.done > svg:first-child > rect {
+  stroke: rgb(59 31 58 / 0.35);
+  stroke-width: 1.5;
 }
 
 .here:hover,
@@ -163,6 +181,18 @@
   background: var(--paper);
 }
 
+/* A finer, quieter thread than the action blocks', so the rows sit back under today's step. */
+.row > svg:first-child > rect {
+  stroke: color-mix(in oklab, var(--stitch) 45%, var(--ground-raised));
+  stroke-width: 1.25;
+  stroke-dasharray: 4 4;
+}
+
+/* Once the family has paid it, the row is sewn in her sage. */
+.row[data-paid] > svg:first-child > rect {
+  stroke: color-mix(in oklab, var(--rosa) 60%, var(--ground-raised));
+}
+
 .rowText {
   display: grid;
   gap: 1px;
@@ -170,7 +200,7 @@
 
 .day {
   font-size: 1.125rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.3;
 }
 
@@ -179,8 +209,17 @@
 }
 
 .pay {
+  display: grid;
+  justify-items: end;
   font-size: 1.125rem;
-  font-weight: 800;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.paid {
+  color: var(--rosa);
+  font-size: 0.875rem;
+  font-weight: 700;
 }
 
 /* The week's total and how it's paid, under a running stitch. */
@@ -237,12 +276,13 @@
   color: var(--rosa);
 }
 
-/* Each tap stitches the next step in, in place: the block settles and its thread runs round once. */
-.arrive {
+/* Each tap stitches the next step in, in place: the block settles and its thread runs round once. Only a step that
+   arrives from her tap is marked (Arrived.tsx); a page load shows it still. */
+.today [data-arrive] {
   animation: arrive 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.arrive rect {
+.today [data-arrive] rect {
   animation: thread 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -266,8 +306,8 @@
     transition: none;
   }
 
-  .arrive,
-  .arrive rect {
+  .today [data-arrive],
+  .today [data-arrive] rect {
     animation: none;
   }
 }

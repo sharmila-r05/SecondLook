@@ -26,10 +26,11 @@ export interface CarePeriod {
   paidAt: Date | null;
 }
 
-/** "8:30–10:30 am", or "11:30 am–12:45 pm" across noon. */
+/** "8:30–10:30 am", or "11:30 am–12:45 pm" across noon; just "1:27 am" when both ends fall in the same minute. */
 export function formatTimeRange(start: Date, end: Date): string {
   const from = formatTime(start);
   const to = formatTime(end);
+  if (from === to) return from;
   const suffix = / [ap]m$/;
   const fromSuffix = suffix.exec(from)?.[0];
   return fromSuffix && fromSuffix === suffix.exec(to)?.[0] ? `${from.replace(suffix, "")}–${to}` : `${from}–${to}`;
@@ -40,9 +41,25 @@ export function weekdayName(ymd: string): string {
   return new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: "UTC" }).format(new Date(`${ymd}T12:00:00Z`));
 }
 
+/** "Thursday, Nov 5" for "2026-11-05": the list runs back seven days, so a weekday alone could mean last week's. */
+export function dayLabel(ymd: string): string {
+  return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" }).format(
+    new Date(`${ymd}T12:00:00Z`),
+  );
+}
+
 /** When the visit started: Rosa's check-in, or when Margaret said she came. */
 function startedAt(visit: AideVisit): Date {
   return visit.checkedInAt ?? visit.createdAt;
+}
+
+function covers(period: CarePeriod, date: string): boolean {
+  return period.startDate <= date && date <= period.endDate;
+}
+
+/** A closed week covers this visit, so its pay has gone out to Rosa by PayPal. */
+export function isPaid(visit: AideVisit, periods: readonly CarePeriod[]): boolean {
+  return periods.some((p) => p.status === "closed" && covers(p, visit.date));
 }
 
 export interface VisitRow {
@@ -50,16 +67,19 @@ export interface VisitRow {
   day: string;
   times: string;
   pay: string;
+  /** The family closed a week covering this visit: its pay has gone out. */
+  paid: boolean;
 }
 
-/** One settled row in the week: the day, the hours, the pay. */
-export function visitRow(visit: AideVisit, label = weekdayName(visit.date)): VisitRow {
+/** One settled row in the week: the day, the hours, the pay, and whether it's been paid. */
+export function visitRow(visit: AideVisit, periods: readonly CarePeriod[] = [], label = dayLabel(visit.date)): VisitRow {
   const start = startedAt(visit);
   return {
     id: visit.id,
     day: label,
     times: visit.checkedOutAt ? formatTimeRange(start, visit.checkedOutAt) : formatTime(start),
     pay: formatUsd(visit.rateCents),
+    paid: isPaid(visit, periods),
   };
 }
 
@@ -72,16 +92,12 @@ export type TodayCard =
  * Today's visit, one step at a time: not here yet, here (checked in, or noted by Margaret), done. One visit a day, so
  * Margaret's "Rosa came today" and Rosa's own check-in are the same visit.
  */
-export function todayCard(visit: AideVisit | null, parent: string): TodayCard {
+export function todayCard(visit: AideVisit | null, parent: string, periods: readonly CarePeriod[] = []): TodayCard {
   if (!visit) return { step: "start" };
-  if (visit.checkedOutAt) return { step: "done", row: visitRow(visit, "Today") };
+  if (visit.checkedOutAt) return { step: "done", row: visitRow(visit, periods, "Today") };
   const pay = formatUsd(visit.rateCents);
   if (visit.checkedInAt) return { step: "visiting", title: `Checked in ${formatTime(visit.checkedInAt)}`, detail: `Today’s visit · ${pay}` };
   return { step: "visiting", title: `${parent} said you came today`, detail: `At ${formatTime(visit.createdAt)} · ${pay}` };
-}
-
-function covers(period: CarePeriod, date: string): boolean {
-  return period.startDate <= date && date <= period.endDate;
 }
 
 export interface WeekSummary {

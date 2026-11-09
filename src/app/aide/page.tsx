@@ -8,6 +8,7 @@ import { ensureFamily } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
 import { formatDay } from "@/lib/time";
 import { checkIn, checkOut } from "./actions";
+import { Arrived } from "./Arrived";
 import styles from "./aide.module.css";
 import { StepButton } from "./StepButton";
 
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 function SettledRow({ row, today = false }: { row: VisitRow; today?: boolean }) {
   return (
-    <li className={styles.row} data-today={today || undefined}>
+    <li className={styles.row} data-today={today || undefined} data-paid={row.paid || undefined}>
       <Stitch kind="sewn" />
       <StateMark state="settled" fabric="var(--rosa)" />
       <p className={styles.rowText}>
@@ -24,7 +25,15 @@ function SettledRow({ row, today = false }: { row: VisitRow; today?: boolean }) 
         <span className="visually-hidden">, </span>
         <span className={styles.times}>{row.times}</span>
       </p>
-      <p className={styles.pay}>{row.pay}</p>
+      <p className={styles.pay}>
+        <span>{row.pay}</span>
+        {row.paid && (
+          <>
+            <span className="visually-hidden">, </span>
+            <span className={styles.paid}>Paid</span>
+          </>
+        )}
+      </p>
     </li>
   );
 }
@@ -33,7 +42,7 @@ export default async function AidePage() {
   const now = new Date();
   const family = await ensureFamily(await getSessionId());
   const week = await getAideWeek(family, now);
-  const card = todayCard(week.today, week.parent);
+  const card = todayCard(week.today, week.parent, week.periods);
   const summary = weekSummary(week.visits, week.periods, now);
 
   return (
@@ -68,26 +77,30 @@ export default async function AidePage() {
 
             {card.step === "visiting" && (
               <div key="visiting" className={styles.step}>
-                <div className={`${styles.visiting} ${styles.arrive}`}>
+                <div id="aide-visiting" className={styles.visiting}>
                   <Stitch kind="light" />
-                  <StateMark state="settled" fabric="rgb(255 255 255 / 0.24)" />
+                  <StateMark state="settled" fabric="rgb(0 0 0 / 0.2)" />
                   <div>
                     <p className={styles.visitingTitle}>{card.title}</p>
                     <p className={styles.visitingDetail}>{card.detail}</p>
                   </div>
                 </div>
                 <form action={checkOut} className={styles.form}>
-                  <StepButton className={styles.done} pending="Saving…" decor={<Stitch kind="light" />}>
+                  <StepButton id="aide-visit-done" className={styles.done} pending="Saving…" decor={<Stitch kind="light" />}>
                     Visit done
                   </StepButton>
                 </form>
+                <Arrived step="aide-visiting" focus="aide-visit-done" />
               </div>
             )}
 
             {card.step === "done" && (
-              <ul key="done" className={`${styles.rows} ${styles.arrive}`}>
-                <SettledRow row={card.row} today />
-              </ul>
+              <div key="done" className={styles.step}>
+                <ul id="aide-done" className={styles.rows} tabIndex={-1}>
+                  <SettledRow row={card.row} today />
+                </ul>
+                <Arrived step="aide-done" focus="aide-done" />
+              </div>
             )}
           </section>
 
@@ -95,23 +108,23 @@ export default async function AidePage() {
             {week.earlier.length > 0 ? (
               <>
                 <h2 id="week-heading" className={styles.subheading}>
-                  Earlier this week
+                  This past week
                 </h2>
                 <ul className={styles.rows}>
                   {week.earlier.map((visit) => (
-                    <SettledRow key={visit.id} row={visitRow(visit)} />
+                    <SettledRow key={visit.id} row={visitRow(visit, week.periods)} />
                   ))}
                 </ul>
               </>
             ) : (
               <h2 id="week-heading" className="visually-hidden">
-                This week
+                This past week
               </h2>
             )}
 
             <div className={styles.summary}>
               <p className={styles.total}>
-                <span>This week · {summary.count}</span>
+                <span>This past week · {summary.count}</span>
                 {summary.totalCents > 0 && <strong>{summary.total}</strong>}
               </p>
               <ul className={styles.payLines}>
