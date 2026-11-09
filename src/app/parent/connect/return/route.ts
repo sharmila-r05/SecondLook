@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import { ensureFamily } from "@/lib/family";
 import { PayPalError } from "@/lib/paypal";
 import { getSessionId } from "@/lib/session";
 import { finishConnect } from "@/lib/vault";
+import { seeOther } from "@/lib/redirect";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +18,10 @@ export async function GET(request: Request) {
   const family = await ensureFamily(sessionId);
   try {
     await finishConnect(family, sessionId, named);
-    return NextResponse.redirect(new URL("/parent?paypal=connected", url), 303);
+    return seeOther("/parent?paypal=connected");
   } catch (err) {
     // Log PayPal's debug_id, never bodies or emails.
     console.error("connecting PayPal failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);
-    return NextResponse.redirect(new URL("/parent?paypal=not-connected", url), 303);
+    return seeOther("/parent?paypal=not-connected");
   }
 }

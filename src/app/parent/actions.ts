@@ -10,6 +10,7 @@ import { PayPalError } from "@/lib/paypal";
 import { getSessionId } from "@/lib/session";
 import { localDate } from "@/lib/time";
 import { savedPayPal, startConnect } from "@/lib/vault";
+import { publicOrigin } from "@/lib/redirect";
 
 /** "Connect PayPal": sends Margaret to PayPal once, to let Second Look pay the bills she says yes to. */
 export async function connectPayPal(): Promise<void> {
@@ -18,7 +19,7 @@ export async function connectPayPal(): Promise<void> {
   if (await savedPayPal(family)) redirect("/parent");
 
   const h = await headers();
-  const origin = process.env.APP_BASE_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+  const origin = publicOrigin(h);
   let approveUrl: string;
   try {
     approveUrl = await startConnect(family, sessionId, origin);
