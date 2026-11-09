@@ -23,6 +23,9 @@ import { ensureFamily, getSecondLooks } from "@/lib/family";
 import type { RuleId } from "@/lib/risk";
 import { getSessionId } from "@/lib/session";
 import { decide } from "./actions";
+import { WeekQuilt } from "@/components/ledger/WeekQuilt";
+import { buildLedger } from "@/lib/ledger";
+import { getLedgerInput } from "@/lib/ledger-data";
 import { CareNeedsCard, CareTab } from "./CareCards";
 import { PhoneQr } from "./PhoneQr";
 import styles from "./family.module.css";
@@ -98,7 +101,11 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
   const family = await ensureFamily(sessionId);
   await sweepExpiredHolds(family, sessionId);
   await refreshCare(family, sessionId);
-  const [looks, care] = await Promise.all([getSecondLooks(family), getCare(family)]);
+  const [looks, care, ledger] = await Promise.all([
+    getSecondLooks(family),
+    getCare(family),
+    tab === "money" ? getLedgerInput(family).then((input) => buildLedger(input)) : null,
+  ]);
   const waiting = looks.filter((l) => l.status === "held");
   const decided = looks.filter((l) => l.status !== "held");
   const href = (t: Tab) => {
@@ -146,9 +153,14 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
           {tab === "money" && (
             <>
               <h1 className={styles.heading}>Money</h1>
-              <p className={styles.empty}>
-                Every payment and who moved it is in the <Link href="/ledger">shared ledger</Link>.
+              <p className={styles.explain}>
+                Every money move this week, in the colour of whoever set it going. Tap a block to see the PayPal steps behind it, or open the{" "}
+                <Link href="/ledger" className={styles.textLink}>
+                  full ledger
+                </Link>
+                .
               </p>
+              {ledger && <WeekQuilt weeks={ledger.weeks} initialSelected={ledger.selected} />}
             </>
           )}
 

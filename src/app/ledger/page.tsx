@@ -5,6 +5,7 @@ import { PayPalStepsGrid } from "@/components/ledger/PayPalStepsGrid";
 import { WeekQuilt } from "@/components/ledger/WeekQuilt";
 import { Frame } from "@/components/quilt/Frame";
 import { sweepExpiredHolds } from "@/lib/bills";
+import { refreshCare } from "@/lib/care";
 import { ensureFamily } from "@/lib/family";
 import { buildLedger } from "@/lib/ledger";
 import { getLedgerInput } from "@/lib/ledger-data";
@@ -22,6 +23,8 @@ export default async function LedgerPage() {
   const family = await ensureFamily(sessionId);
   // The same lazy sweep the family screen runs, so a hold nobody answered reads as cancelled here too.
   await sweepExpiredHolds(family, sessionId);
+  // And a sibling's invoice paid on PayPal shows as paid here without opening the care screen.
+  await refreshCare(family, sessionId);
   const ledger = buildLedger(await getLedgerInput(family));
 
   return (
