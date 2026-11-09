@@ -7,6 +7,7 @@
 
 import { randomUUID } from "node:crypto";
 import type postgres from "postgres";
+import { payoutWithTopUp } from "@/lib/balance";
 import { db } from "@/lib/db";
 import { SANDBOX_EMAILS } from "@/lib/demo/accounts";
 import { recordEvent } from "@/lib/events";
@@ -17,7 +18,6 @@ import {
   authorizeOrder,
   captureAuthorization,
   createAuthorizeOrder,
-  createPayout,
   getPayout,
   PayPalError,
   voidAuthorization,
@@ -292,7 +292,7 @@ export async function captureAndPay(family: Pick<Family, "id">, sessionId: strin
     // In the sandbox a payee Margaret named for the first time has no PayPal account on file; the demo's stand-in
     // account receives it. A real product would ask family for the payee's PayPal email when approving.
     const receiver = bill.payeeEmail ?? SANDBOX_EMAILS.techSupport;
-    const sent = await createPayout({
+    const sent = await payoutWithTopUp(payout.id, {
       senderBatchId: `sl-bill-${bill.id}`,
       requestId: payout.paypal_request_id,
       receiverEmail: receiver,

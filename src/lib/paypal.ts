@@ -428,3 +428,29 @@ export async function verifyWebhookSignature(input: { headers: Headers; event: u
   });
   return body.verification_status === "SUCCESS";
 }
+
+// ---- Sandbox balance top-up ----
+
+// PayPal's published sandbox test Visa (developer.paypal.com card testing) with a fictional holder. Used only to top
+// up Second Look's own sandbox balance; the app never collects or stores anyone's card.
+const SANDBOX_TEST_CARD = {
+  number: "4111111111111111",
+  expiry: "2030-12",
+  security_code: "123",
+  name: "Second Look Demo",
+  billing_address: { address_line_1: "12 Example Lane", admin_area_2: "Columbus", admin_area_1: "OH", postal_code: "43004", country_code: "US" },
+};
+
+/** A card-funded CAPTURE order into Second Look's own account: it captures at create, with no buyer step. */
+export async function topUpSandboxBalance(input: { requestId: string; amountCents: number }): Promise<{ orderId: string; status: string }> {
+  assertSandbox();
+  const { body } = await rest<{ id?: string; status?: string }>("POST", "/v2/checkout/orders", {
+    requestId: input.requestId,
+    body: {
+      intent: "CAPTURE",
+      purchase_units: [{ reference_id: "balance-top-up", description: "Second Look sandbox balance top-up", amount: { currency_code: "USD", value: toAmount(input.amountCents) } }],
+      payment_source: { card: SANDBOX_TEST_CARD },
+    },
+  });
+  return { orderId: body.id ?? "", status: body.status ?? "UNKNOWN" };
+}

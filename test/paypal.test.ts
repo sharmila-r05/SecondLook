@@ -11,6 +11,7 @@ import {
   createPayout,
   PayPalError,
   sendInvoice,
+  topUpSandboxBalance,
   setPayPalTransportForTests,
   voidAuthorization,
 } from "@/lib/paypal";
@@ -206,5 +207,31 @@ describe("Invoicing (replayed)", () => {
     const invoice = await sendInvoice({ invoiceId: "INV2-7WL8-A4UN-4A72-PHBF", requestId: "7d0c9a52-8a8e-4c37-9a4e-1f8a2f1d-send" });
     expect(invoice.status).toBe("UNPAID");
     expect(sent).toHaveLength(1);
+  });
+});
+
+describe("sandbox balance top-up (replayed)", () => {
+  const payout = {
+    senderBatchId: "sl-care-test",
+    requestId: "5b2f0c1e-9a7d-4d1b-8f3e-2c6a9b8d7e10",
+    receiverEmail: "rosa@example.test",
+    amountCents: 10000,
+    note: "Pay for 2 visits",
+    senderItemId: "period-1",
+    emailSubject: "Your pay",
+  };
+
+  it("surfaces a payout refused for insufficient funds as INSUFFICIENT_FUNDS", async () => {
+    replay("payout-insufficient");
+    await expect(createPayout(payout)).rejects.toMatchObject({ issue: "INSUFFICIENT_FUNDS", status: 422 });
+  });
+
+  it("tops up with a card-funded CAPTURE order that completes at create", async () => {
+    const sent = replay("top-up-capture");
+    const result = await topUpSandboxBalance({ requestId: "0d6c2f7a-3e1b-4c5d-9a8f-7b6e5d4c3b2a", amountCents: 200000 });
+    expect(result.status).toBe("COMPLETED");
+    expect(sent[0]).toMatchObject({ method: "POST", requestId: "0d6c2f7a-3e1b-4c5d-9a8f-7b6e5d4c3b2a" });
+    expect(sent[0]?.body).toMatchObject({ intent: "CAPTURE", purchase_units: [{ amount: { currency_code: "USD", value: "2000.00" } }] });
+    expect(sent[0]?.body).toHaveProperty("payment_source.card");
   });
 });

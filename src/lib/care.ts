@@ -5,13 +5,14 @@
 
 import { randomUUID } from "node:crypto";
 import type postgres from "postgres";
+import { payoutWithTopUp } from "@/lib/balance";
 import { db } from "@/lib/db";
 import { SANDBOX_EMAILS } from "@/lib/demo/accounts";
 import { recordEvent } from "@/lib/events";
 import type { Family } from "@/lib/family";
 import { memberNamed } from "@/lib/family";
 import { assertCents, splitCents } from "@/lib/money";
-import { createInvoice, createPayout, getInvoice, PayPalError, sendInvoice } from "@/lib/paypal";
+import { createInvoice, getInvoice, PayPalError, sendInvoice } from "@/lib/paypal";
 import { localDate } from "@/lib/time";
 
 type Sql = postgres.Sql | postgres.TransactionSql;
@@ -221,7 +222,7 @@ export async function finishClosing(family: Family, sessionId: string, periodId:
   const [payout] = await sql<{ id: string; paypal_request_id: string; paypal_payout_batch_id: string | null }[]>`
     select id, paypal_request_id, paypal_payout_batch_id from payments where care_period_id = ${periodId} and kind = 'payout'`;
   if (payout && !payout.paypal_payout_batch_id) {
-    const sent = await createPayout({
+    const sent = await payoutWithTopUp(payout.id, {
       senderBatchId: period.payout_sender_batch_id,
       requestId: payout.paypal_request_id,
       receiverEmail: SANDBOX_EMAILS.rosa,

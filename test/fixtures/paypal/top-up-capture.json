@@ -1,0 +1,113 @@
+{
+  "saved_at": "2026-11-09T07:25:11.142Z",
+  "method": "POST",
+  "path": "/v2/checkout/orders",
+  "request_id": "dd7e6862-4cbc-47d6-97c6-0035fd644f4c",
+  "http_status": 201,
+  "debug_id": "ca57b14ec7bbc",
+  "ms": 3216,
+  "response": {
+    "id": "95U05864599517227",
+    "intent": "CAPTURE",
+    "status": "COMPLETED",
+    "payment_source": {
+      "card": {
+        "name": "Margaret Demo",
+        "last_digits": "1111",
+        "expiry": "2030-12",
+        "brand": "VISA",
+        "type": "CREDIT",
+        "bin_details": {}
+      }
+    },
+    "purchase_units": [
+      {
+        "reference_id": "gate-top-up",
+        "amount": {
+          "currency_code": "USD",
+          "value": "2000.00"
+        },
+        "payee": {
+          "email_address": "<secondlook>",
+          "merchant_id": "Y3WGWVT9JFCUG"
+        },
+        "description": "Second Look sandbox balance top-up",
+        "custom_id": "gate-top-up",
+        "soft_descriptor": "TEST STORE",
+        "supplementary_data": {
+          "risk": {
+            "risk_level_indicator": "HIGH_RISK"
+          }
+        },
+        "payments": {
+          "captures": [
+            {
+              "id": "4T227320HS206604J",
+              "status": "COMPLETED",
+              "amount": {
+                "currency_code": "USD",
+                "value": "2000.00"
+              },
+              "final_capture": true,
+              "seller_protection": {
+                "status": "NOT_ELIGIBLE"
+              },
+              "seller_receivable_breakdown": {
+                "gross_amount": {
+                  "currency_code": "USD",
+                  "value": "2000.00"
+                },
+                "paypal_fee": {
+                  "currency_code": "USD",
+                  "value": "52.29"
+                },
+                "net_amount": {
+                  "currency_code": "USD",
+                  "value": "1947.71"
+                }
+              },
+              "custom_id": "gate-top-up",
+              "links": [
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/payments/captures/4T227320HS206604J",
+                  "rel": "self",
+                  "method": "GET"
+                },
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/payments/captures/4T227320HS206604J/refund",
+                  "rel": "refund",
+                  "method": "POST"
+                },
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/checkout/orders/95U05864599517227",
+                  "rel": "up",
+                  "method": "GET"
+                }
+              ],
+              "create_time": "2026-11-09T07:25:10Z",
+              "update_time": "2026-11-09T07:25:10Z",
+              "network_transaction_reference": {
+                "id": "139269181650467",
+                "network": "VISA"
+              },
+              "processor_response": {
+                "avs_code": "A",
+                "cvv_code": "M",
+                "response_code": "0000"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "create_time": "2026-11-09T07:25:10Z",
+    "update_time": "2026-11-09T07:25:10Z",
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v2/checkout/orders/95U05864599517227",
+        "rel": "self",
+        "method": "GET"
+      }
+    ]
+  }
+}

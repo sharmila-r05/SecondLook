@@ -1,0 +1,16 @@
+{
+  "saved_at": "2026-11-09T07:25:07.427Z",
+  "method": "POST",
+  "path": "/v1/payments/payouts",
+  "request_id": "d9070818-92da-4b7e-9819-9064082f9452",
+  "http_status": 422,
+  "debug_id": "ca57b14e24e4e",
+  "ms": 1125,
+  "response": {
+    "name": "INSUFFICIENT_FUNDS",
+    "message": "Sender does not have sufficient funds. Please add funds and retry.",
+    "debug_id": "ca57b14e24e4e",
+    "information_link": "https://developer.paypal.com/docs/api/payments.payouts-batch/#errors",
+    "links": []
+  }
+}
