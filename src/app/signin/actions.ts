@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { rememberSignIn } from "@/lib/account";
 import { consumeCode, normalizeEmail, requestSignIn, signIn } from "@/lib/auth";
+import { homeFor } from "@/lib/home";
 import { publicOrigin } from "@/lib/redirect";
 import { getDevicePerson, getSessionId } from "@/lib/session";
 
@@ -45,7 +46,9 @@ export async function checkCode(prev: SignInState, form: FormData): Promise<Sign
   }
   const account = await signIn(result.emailHash, { sessionId, person: await getDevicePerson() });
   await rememberSignIn(account);
-  redirect("/api/account/home");
+  // Straight to the page, not via /api/account/home: a server action's redirect to a route handler leaves the
+  // browser on that route's URL, and the next form posted from the page fails.
+  redirect((await homeFor(account.sessionId, account.person, account)) ?? "/setup");
 }
 
 /** "Use a different email": back to step 1. */

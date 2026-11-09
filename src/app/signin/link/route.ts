@@ -1,5 +1,6 @@
 import { rememberSignIn } from "@/lib/account";
 import { consumeLink, signIn } from "@/lib/auth";
+import { homeFor } from "@/lib/home";
 import { seeOther } from "@/lib/redirect";
 import { getDevicePerson, getSessionId } from "@/lib/session";
 
@@ -12,5 +13,5 @@ export async function GET(request: Request) {
   if (!verified) return seeOther("/signin?link=expired");
   const account = await signIn(verified.emailHash, { sessionId: await getSessionId(), person: await getDevicePerson() });
   await rememberSignIn(account);
-  return seeOther("/api/account/home");
+  return seeOther((await homeFor(account.sessionId, account.person, account)) ?? "/setup");
 }
