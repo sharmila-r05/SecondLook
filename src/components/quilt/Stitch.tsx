@@ -1,10 +1,11 @@
 import styles from "./Stitch.module.css";
 
-export type StitchKind = "sewn" | "basting" | "pulled" | "light";
+export type StitchKind = "sewn" | "basting" | "pulled" | "light" | "sage";
 
 /**
  * The thread around a block: a fine running stitch once something is settled, long loose rose basting while it waits
- * for family, basting pulled loose when family said no. Decorative; the state is always also said in words.
+ * for family, basting pulled loose when family said no, and Rosa's sage thread around care work that is still open.
+ * Decorative; the state is always also said in words.
  */
 export function Stitch({ kind }: { kind: StitchKind }) {
   return (

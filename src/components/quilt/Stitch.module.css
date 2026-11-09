@@ -34,6 +34,13 @@
   stroke-dasharray: 18 12;
 }
 
+/* Care work still open (a week to close, a share to pay): Rosa's sage, so rose stays for what waits on a decision. */
+.sage .thread {
+  stroke: var(--rosa);
+  stroke-width: 2.5;
+  stroke-dasharray: 12 8;
+}
+
 .pulled .thread {
   stroke: var(--thread-rose);
   stroke-width: 3;
