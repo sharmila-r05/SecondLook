@@ -43,6 +43,40 @@ services:
         sync: false
       - key: VAPID_SUBJECT
         sync: false
+      # Close-the-week's PayPal steps run on Render Workflows when the API key is set; without it they run inline.
+      - key: RENDER_WORKFLOW
+        value: secondlook-close-week
+      - key: RENDER_WORKFLOW_API_KEY
+        sync: false
+
+  # Render Workflows: pays Rosa and sends the siblings' invoices for a closed care week, with retries. Runs the app's
+  # own TypeScript (Node strips the types; workflows/register.mjs resolves the @/ alias).
+  - type: workflow
+    runtime: node
+    name: secondlook-close-week
+    region: oregon
+    buildCommand: npm ci
+    startCommand: node --experimental-transform-types --import ./workflows/register.mjs workflows/close-week.ts
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 24.22.1
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: DATABASE_URL
+        fromDatabase:
+          name: secondlook-db
+          property: connectionString
+      - key: PAYPAL_CLIENT_ID
+        fromService:
+          type: web
+          name: secondlook
+          envVarKey: PAYPAL_CLIENT_ID
+      - key: PAYPAL_CLIENT_SECRET
+        fromService:
+          type: web
+          name: secondlook
+          envVarKey: PAYPAL_CLIENT_SECRET
 
 databases:
   - name: secondlook-db

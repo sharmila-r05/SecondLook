@@ -153,8 +153,49 @@ export async function closeWeek(family: Family, sessionId: string, closedByMembe
     await recordEvent(tx, family, sessionId, "week:closed", { carePeriodId: id, startDate: visits[0]!.date, endDate: today, visits: visits.length, totalCents, by });
     return id;
   });
-  if (periodId) await finishClosing(family, sessionId, periodId);
+  if (periodId && !(await startClosingRun(family, sessionId, periodId))) await finishClosing(family, sessionId, periodId);
   return periodId;
+}
+
+const workflowConfigured = () => Boolean(process.env.RENDER_WORKFLOW && process.env.RENDER_WORKFLOW_API_KEY);
+
+/**
+ * Hands the PayPal steps of a close to Render Workflows, which retries them with backoff. Each step is idempotent
+ * (fixed sender_batch_id, invoice numbers, send-only-drafts), so a retry never pays twice. Returns false when the
+ * workflow isn't configured or Render refused the run, and the caller does the work inline instead.
+ */
+async function startClosingRun(family: Pick<Family, "id">, sessionId: string, periodId: string): Promise<boolean> {
+  if (!workflowConfigured()) return false;
+  try {
+    const res = await fetch("https://api.render.com/v1/task-runs", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.RENDER_WORKFLOW_API_KEY}`, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ task: `${process.env.RENDER_WORKFLOW}/finishCloseWeek`, input: [periodId], idempotencyKey: `close-${periodId}` }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) {
+      console.error(`Render Workflows refused the close run: HTTP ${res.status}`);
+      return false;
+    }
+    const run = (await res.json().catch(() => ({}))) as { id?: string };
+    await recordEvent(db(), family, sessionId, "workflow:started", { carePeriodId: periodId, taskRunId: run.id ?? null });
+    return true;
+  } catch (err) {
+    console.error("starting the Render Workflows run failed:", err instanceof Error ? err.message : err);
+    return false;
+  }
+}
+
+/** The workflow task's entry point: loads the period's family and session, then finishes the close. */
+export async function finishClosingById(periodId: string): Promise<{ status: string }> {
+  const sql = db();
+  const [period] = await sql<{ family_id: string; demo_session_id: string }[]>`
+    select family_id, demo_session_id from care_periods where id = ${periodId}`;
+  if (!period) return { status: "unknown period" };
+  const members = await sql<Family["members"]>`select id, name, role from members where family_id = ${period.family_id}`;
+  await finishClosing({ id: period.family_id, members: [...members] }, period.demo_session_id, periodId);
+  const [after] = await sql<{ status: string }[]>`select status from care_periods where id = ${periodId}`;
+  return { status: after?.status ?? "unknown" };
 }
 
 const SHORT_DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -272,7 +313,8 @@ export async function refreshCare(family: Family, sessionId: string): Promise<vo
   const sql = db();
   try {
     const stuck = await sql<{ id: string }[]>`
-      select id from care_periods where family_id = ${family.id} and status = 'closing' and closed_at < now() - interval '15 seconds'`;
+      select id from care_periods where family_id = ${family.id} and status = 'closing'
+        and closed_at < now() - ${workflowConfigured() ? "90 seconds" : "15 seconds"}::interval`;
     for (const { id } of stuck) await finishClosing(family, sessionId, id);
 
     const due = await sql<{ id: string; care_period_id: string; name: string; amount_cents: string; paypal_invoice_id: string }[]>`
