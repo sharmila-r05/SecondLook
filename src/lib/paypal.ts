@@ -90,7 +90,7 @@ async function token(): Promise<{ value: string; expiresAt: number }> {
   return shared.paypalTokenInFlight;
 }
 
-function sdk(): Client {
+export function sdk(): Client {
   const { id, secret } = credentials();
   shared.paypalSdk ??= new Client({
     environment: Environment.Sandbox,
@@ -117,14 +117,16 @@ function sdk(): Client {
 }
 
 /** Runs one SDK call and turns PayPal's error payload into a PayPalError. */
-async function call<T>(run: () => Promise<ApiResponse<T>>): Promise<{ status: number; result: T; debugId?: string }> {
+export async function call<T>(run: () => Promise<ApiResponse<T>>): Promise<{ status: number; result: T; debugId?: string }> {
   try {
     const response = await run();
     return { status: response.statusCode, result: response.result, debugId: response.headers["paypal-debug-id"] };
   } catch (err) {
-    if (err instanceof CustomError) {
+    // The SDK parses the error body onto `result` only for the statuses it lists for that call; any other (a 403 on
+    // create order, measured 9 Nov) arrives with the body unparsed, so read it from there.
+    if (err instanceof CustomError && err.result) {
       const r = err.result;
-      throw new PayPalError(err.statusCode, r?.details?.[0]?.issue ?? r?.name ?? "UNKNOWN", r?.debug_id ?? err.headers["paypal-debug-id"]);
+      throw new PayPalError(err.statusCode, r.details?.[0]?.issue ?? r.name ?? "UNKNOWN", r.debug_id ?? err.headers["paypal-debug-id"]);
     }
     if (err instanceof ApiError) {
       let parsed: { name?: string; debug_id?: string; details?: { issue?: string }[] } = {};
@@ -137,7 +139,7 @@ async function call<T>(run: () => Promise<ApiResponse<T>>): Promise<{ status: nu
   }
 }
 
-function requireRequestId(requestId: string) {
+export function requireRequestId(requestId: string) {
   if (!requestId || requestId.length > 38) throw new Error("every PayPal POST needs a stored PayPal-Request-Id of 1-38 characters");
 }
 
