@@ -24,6 +24,7 @@ import type { RuleId } from "@/lib/risk";
 import { getSessionId } from "@/lib/session";
 import { decide } from "./actions";
 import { CareNeedsCard, CareTab } from "./CareCards";
+import { PhoneQr } from "./PhoneQr";
 import styles from "./family.module.css";
 
 export const dynamic = "force-dynamic";
@@ -89,7 +90,7 @@ function SecondLookCard({ item, as }: { item: SecondLook; as: "sarah" | "tom" })
   );
 }
 
-export default async function FamilyPage({ searchParams }: { searchParams: Promise<{ as?: string; tab?: string }> }) {
+export default async function FamilyPage({ searchParams }: { searchParams: Promise<{ as?: string; tab?: string; join?: string }> }) {
   const params = await searchParams;
   const as = params.as === "tom" ? "tom" : "sarah";
   const tab: Tab = params.tab === "money" || params.tab === "care" ? params.tab : "needs";
@@ -116,6 +117,11 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
           {tab === "needs" && (
             <>
               <h1 className={styles.heading}>Needs you</h1>
+              {params.join === "expired" && (
+                <p className={styles.explain} role="status">
+                  That code had expired, so this phone has its own demo family. Scan the code on the computer again to join.
+                </p>
+              )}
               {waiting.length === 0 ? (
                 <p className={styles.empty}>Nothing needs you right now. Mom&rsquo;s bills are going through on their own.</p>
               ) : (
@@ -133,6 +139,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                   ))}
                 </>
               )}
+              <PhoneQr sessionId={sessionId} as={as} />
             </>
           )}
 

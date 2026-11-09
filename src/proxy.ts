@@ -23,5 +23,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Not the PayPal webhook (no browser, no session) and not the health check; never static assets.
-  matcher: ["/((?!api/paypal/webhook|api/health|_next/static|_next/image|favicon.ico|icons/).*)"],
+  matcher: ["/((?!api/paypal/webhook|api/health|join/|_next/static|_next/image|favicon.ico|icons/).*)"],
 };

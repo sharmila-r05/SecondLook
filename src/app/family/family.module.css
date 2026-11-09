@@ -262,6 +262,44 @@
   font-size: 0.9375rem;
 }
 
+.phoneQr {
+  display: none;
+}
+
+/* Only where a second device makes sense: a desktop screen showing the phone column. */
+@media (min-width: 760px) and (hover: hover) {
+  .phoneQr {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+    margin-top: 8px;
+    padding: 16px;
+    border-radius: var(--radius-row);
+    background: var(--ground-raised);
+  }
+}
+
+.qr {
+  width: 112px;
+  height: 112px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.qrTitle {
+  margin-bottom: 4px;
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
 .expires {
   color: var(--ink-muted);
   font-size: 0.9375rem;
