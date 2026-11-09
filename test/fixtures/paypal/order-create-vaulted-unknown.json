@@ -1,0 +1,27 @@
+{
+  "saved_at": "2026-11-09T06:26:02.787Z",
+  "method": "POST",
+  "path": "/v2/checkout/orders",
+  "request_id": "c247760a-e403-44ed-919e-745e7813d486",
+  "http_status": 403,
+  "debug_id": "f619067bb5075",
+  "ms": 2964,
+  "response": {
+    "name": "NOT_AUTHORIZED",
+    "details": [
+      {
+        "issue": "PERMISSION_DENIED",
+        "description": "You do not have permission to access or perform operations on this resource."
+      }
+    ],
+    "message": "Authorization failed due to insufficient permissions.",
+    "debug_id": "f619067bb5075",
+    "links": [
+      {
+        "href": "https://developer.paypal.com/api/rest/reference/orders/v2/errors/#PERMISSION_DENIED",
+        "rel": "information_link",
+        "method": "GET"
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "saved_at": "2026-11-09T06:25:59.821Z",
+  "method": "POST",
+  "path": "/v3/vault/payment-tokens",
+  "request_id": "6854d481-0ea6-45ca-8b6f-62ac468a20e7",
+  "http_status": 422,
+  "debug_id": "f9943069ecdf6",
+  "ms": 1370,
+  "response": {
+    "name": "UNPROCESSABLE_ENTITY",
+    "message": "The requested action could not be performed, semantically incorrect, or failed business validation.",
+    "debug_id": "f9943069ecdf6",
+    "details": [
+      {
+        "issue": "PAYER_ACTION_REQUIRED",
+        "description": "Please make sure setup up token is approved."
+      }
+    ],
+    "links": [
+      {
+        "href": "https://developer.paypal.com/docs/limited-release/payment-tokens/v3/api/#error-UNPROCESSABLE_ENTITY",
+        "method": "GET"
+      }
+    ]
+  }
+}
