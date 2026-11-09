@@ -1,11 +1,12 @@
-// What Rosa's screen reads: her visits this week (Monday to today, in Margaret's time zone) and whether the family has
+// What Rosa's screen reads: her visits this week (the last seven days to today, in Margaret's time zone, the same
+// window the family's care week draws from) and whether the family has
 // closed and paid any of it. Every query filters by the family, which belongs to one demo session (hard rule 10).
 
 import type { AideVisit, CarePeriod } from "@/lib/copy/aide";
 import { db } from "@/lib/db";
 import type { Family, Member } from "@/lib/family";
 import { assertCents } from "@/lib/money";
-import { addDays, localDate, weekdayIndex } from "@/lib/time";
+import { addDays, localDate } from "@/lib/time";
 
 export interface AideWeek {
   aide: Member;
@@ -28,7 +29,7 @@ export async function getAideWeek(family: Family, now = new Date()): Promise<Aid
   const sql = db();
   const aide = familyAide(family);
   const today = localDate(now);
-  const monday = addDays(today, -weekdayIndex(now));
+  const monday = addDays(today, -6); // the week's first day: six days ago, so a Monday still shows her recent visits
 
   const [visitRows, periodRows] = await Promise.all([
     sql<
