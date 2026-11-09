@@ -1,0 +1,278 @@
+/* One person's invite (WCAG 2.2 AA): a paper card with their name sewn on a patch of their fabric, whether their
+   device has opened it, and their QR code and link. */
+
+.card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 4px;
+  padding: 8px;
+  container-type: inline-size;
+  border-radius: var(--radius-block);
+  background: var(--paper);
+}
+
+.band {
+  --fabric: var(--margaret);
+  --on-fabric: var(--paper);
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding: 16px 18px 17px;
+  border-radius: 10px;
+  background: var(--fabric);
+  color: var(--on-fabric);
+}
+
+.band[data-fabric="sarah"] {
+  --fabric: var(--sarah);
+}
+
+.band[data-fabric="tom"] {
+  --fabric: var(--tom);
+  --on-fabric: var(--ink);
+}
+
+.band[data-fabric="rosa"] {
+  --fabric: var(--rosa);
+}
+
+.thread {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.thread rect {
+  fill: none;
+  stroke: color-mix(in srgb, var(--on-fabric) 55%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+  stroke-linecap: round;
+}
+
+.name {
+  position: relative;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.relation {
+  position: relative;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.body {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 14px 10px 12px;
+}
+
+.sendBlock {
+  display: grid;
+  gap: 12px;
+}
+
+.checks {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.check svg {
+  width: 28px;
+  height: 28px;
+}
+
+.check[data-done] {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.about {
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.send {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.qr {
+  width: 112px;
+  height: 112px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgb(26 23 32 / 0.18);
+}
+
+.qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.share {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.url {
+  color: var(--ink);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Quiet like "Get alerts on this phone": a hairline, not the plum outline a decision wears. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px 0 12px;
+  border: 1px solid rgb(26 23 32 / 0.34);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.button:hover {
+  background: var(--ground-raised);
+}
+
+.button svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--plum-700);
+}
+
+.failed {
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.again {
+  display: grid;
+  gap: 12px;
+}
+
+.summary {
+  display: inline-flex;
+  list-style: none;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  width: fit-content;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.chevron {
+  width: 18px;
+  height: 18px;
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.again[open] .chevron {
+  transform: rotate(180deg);
+}
+
+.again[open] > .summary {
+  margin-bottom: 4px;
+}
+
+.lasts {
+  color: var(--ink-muted);
+  font-size: 0.875rem;
+}
+
+/* A narrow card (three across on a wide screen): the code on top, at a size that scans from across a desk. */
+@container (max-width: 299px) {
+  .send {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qr {
+    width: 148px;
+    height: 148px;
+    padding: 10px;
+  }
+}
+
+/* A roomier card: a bigger code, easy to scan from a laptop screen. */
+@container (min-width: 440px) {
+  .band {
+    padding: 18px 22px 19px;
+  }
+
+  .body {
+    padding: 16px 14px 14px;
+  }
+
+  .send {
+    grid-template-columns: 148px minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .qr {
+    width: 148px;
+    height: 148px;
+    padding: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .chevron {
+    transition: none;
+  }
+}
