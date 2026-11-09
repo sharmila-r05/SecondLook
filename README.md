@@ -34,6 +34,8 @@ shares through reminders, IOUs and awkward texts.
 **Margaret pays her own bills.** She taps *Pay a bill*, says or types "Pay the electric bill, $84", hears it read back,
 and says yes. She connected her PayPal once, so that's all it takes. Normal bills go straight through.
 
+![Margaret's screen on her tablet: today's list on the left, with a payment sent to Sarah to double-check and the electric bill paid; two large blocks on the right, Pay a bill and Rosa came today.](assets/readme/margaret-tablet.png)
+
 **Anything unusual is held, not refused.** A new payee, an amount over her limit or three times the usual, words like
 "gift cards" or "hacked", urgency, or too much in one day: the payment is placed as a **PayPal authorization** and sent
 to Sarah and Tom.
