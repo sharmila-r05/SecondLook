@@ -71,10 +71,27 @@
   margin: 0;
 }
 
+/* Sign out and the like, where a family's role tabs and Reset would be. */
+.barEnd {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.barEnd form {
+  margin: 0;
+}
+
 .reset {
   border-style: dashed;
   background: transparent;
   cursor: pointer;
+}
+
+.brand:hover span {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
 }
 
 .main {

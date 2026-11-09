@@ -1,0 +1,380 @@
+/* The welcome page (WCAG AA): the tagline and three plain lines on the pale panel, and the two ways in as tall solid
+   fabric blocks, as Margaret's own actions are. On a phone the doors come straight after the tagline; on a desktop
+   they stand to the right of one panel, the way her two blocks stand beside her day. */
+
+.welcome {
+  display: grid;
+  flex: 1;
+  grid-template-areas:
+    "head"
+    "doors"
+    "how";
+  align-content: start;
+  gap: 8px;
+}
+
+.head,
+.how {
+  background: var(--ground);
+}
+
+.head {
+  grid-area: head;
+  display: grid;
+  gap: 14px;
+  padding: 26px 18px 24px;
+  border-radius: var(--radius-block);
+}
+
+.notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: var(--radius-row);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 2px var(--ink-muted);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.tagline {
+  max-width: 20ch;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* The tagline's second half: the promise to the family, on its own line in the shell's plum. */
+.taglineSecond {
+  display: block;
+  color: var(--plum-700);
+}
+
+.intro {
+  max-width: 54ch;
+  color: var(--ink-muted);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+
+/* The two ways in. */
+.doors {
+  grid-area: doors;
+  display: grid;
+  gap: 8px;
+}
+
+.doorForm {
+  display: grid;
+  margin: 0;
+}
+
+.door {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  width: 100%;
+  padding: 24px 22px 24px 20px;
+  border: 0;
+  border-radius: var(--radius-block);
+  color: var(--paper);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.door:hover {
+  filter: brightness(1.1);
+}
+
+.door:active {
+  transform: translateY(1px);
+}
+
+.door[data-fabric="sarah"] {
+  background: var(--sarah);
+}
+
+.door[data-fabric="margaret"] {
+  background: var(--margaret);
+}
+
+.door[data-fabric="rosa"] {
+  background: var(--rosa);
+}
+
+/* Tom's ochre is light: ink lettering, as on his ledger blocks. */
+.door[data-fabric="tom"] {
+  background: var(--tom);
+  color: var(--ink);
+}
+
+.door[data-fabric="tom"]:hover {
+  filter: brightness(1.05);
+}
+
+.doorIcon {
+  width: 36px;
+  height: 36px;
+  margin-top: 2px;
+  stroke-width: 2.25;
+}
+
+.doorText {
+  display: grid;
+  gap: 8px;
+}
+
+.doorTitle {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+/* Rides on the title's last line, so it reads as part of the words. */
+.arrow {
+  display: inline-block;
+  width: 0.95em;
+  height: 0.95em;
+  margin-left: 0.3em;
+  vertical-align: -0.14em;
+  stroke-width: 2.5;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.door:hover .arrow,
+.door:focus-visible .arrow {
+  transform: translateX(4px);
+}
+
+.doorBody {
+  max-width: 44ch;
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+
+.doorMeta {
+  justify-self: start;
+  margin-top: 4px;
+  padding: 3px 12px;
+  border: 1.5px solid rgb(255 255 255 / 0.62);
+  border-radius: 999px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.door[data-fabric="tom"] .doorMeta {
+  border-color: rgb(26 23 32 / 0.55);
+}
+
+/* How it works: the three lines as rows from Margaret's day, in the quilt's own marks: sewn once settled, basted in
+   rose while it waits on family. */
+.how {
+  grid-area: how;
+  display: grid;
+  gap: 14px;
+  padding: 24px 14px 22px;
+  border-radius: var(--radius-block);
+}
+
+.howHeading {
+  padding: 0 4px;
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.rows {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 20px 18px;
+  border-radius: var(--radius-row);
+  background: var(--ground-raised);
+}
+
+.row[data-waiting] {
+  background: var(--paper);
+}
+
+.rowTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.rowDetail {
+  margin-top: 4px;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+/* A tablet: the doors side by side under the tagline. */
+@media (min-width: 761px) {
+  .welcome {
+    gap: 16px;
+  }
+
+  .head {
+    padding: 40px 40px 34px;
+  }
+
+  .tagline {
+    font-size: 2.5rem;
+  }
+
+  .intro {
+    font-size: 1.1875rem;
+  }
+
+  .doors {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .door {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 28px;
+    min-height: 280px;
+    padding: 30px 30px 28px;
+  }
+
+  .doorText {
+    align-self: end;
+  }
+
+  .doorIcon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .doorTitle {
+    font-size: 1.75rem;
+  }
+
+  .how {
+    padding: 32px 30px 30px;
+  }
+
+  .rows {
+    gap: 14px;
+  }
+}
+
+/* A desktop: one panel on the left (the tagline over how it works), the two doors stacked tall on the right. */
+@media (min-width: 1100px) {
+  .welcome {
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "head doors"
+      "how doors";
+    align-content: stretch;
+    column-gap: 20px;
+    row-gap: 0;
+  }
+
+  .head {
+    gap: 16px;
+    padding: 40px 48px 30px;
+    border-radius: var(--radius-block) var(--radius-block) 0 0;
+  }
+
+  .tagline {
+    max-width: 22ch;
+    font-size: 2.75rem;
+    line-height: 1.06;
+  }
+
+  .how {
+    align-content: start;
+    gap: 14px;
+    padding: 8px 48px 32px;
+    border-radius: 0 0 var(--radius-block) var(--radius-block);
+  }
+
+  .howHeading {
+    padding: 0;
+  }
+
+  .doors {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .door {
+    gap: 20px;
+    min-height: 0;
+    height: 100%;
+    padding: 30px 34px 28px;
+  }
+
+  .doorIcon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .doorTitle {
+    font-size: 2rem;
+  }
+
+  .doorBody {
+    font-size: 1.125rem;
+  }
+
+  .doorMeta {
+    font-size: 1rem;
+  }
+
+  .rows {
+    gap: 12px;
+  }
+
+  .row {
+    padding: 18px 24px;
+  }
+
+  .rowTitle {
+    font-size: 1.1875rem;
+  }
+
+  .rowDetail {
+    font-size: 1.0625rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .door,
+  .arrow {
+    transition: none;
+  }
+
+  .door:hover .arrow,
+  .door:focus-visible .arrow {
+    transform: none;
+  }
+}
