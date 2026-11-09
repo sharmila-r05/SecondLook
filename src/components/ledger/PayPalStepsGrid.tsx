@@ -5,6 +5,7 @@
 
 import { AllCommunityModule, type ColDef, type ICellRendererParams, ModuleRegistry, themeQuartz } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { StepRow } from "@/lib/ledger";
 import styles from "./PayPalStepsGrid.module.css";
 
@@ -44,6 +45,32 @@ function What({ data }: ICellRendererParams<StepRow>) {
   );
 }
 
+/** On a phone, When and Who are hidden, so the What cell says who set the call going, and when. */
+function WhatNarrow({ data }: ICellRendererParams<StepRow>) {
+  if (!data) return null;
+  return (
+    <span className={`${styles.what} ${styles.wrap}`}>
+      <span className={styles.whatMain}>{data.what}</span>
+      <span className={styles.whatCall}>{data.call}</span>
+      <span className={styles.whatBy}>
+        <span className={styles.swatch} data-fabric={data.fabric} aria-hidden="true" />
+        {data.who}, {data.when}
+      </span>
+    </span>
+  );
+}
+
+/** On a phone, the status sits under the amount, so both stay in view without scrolling sideways. */
+function AmountNarrow({ data }: ICellRendererParams<StepRow>) {
+  if (!data) return null;
+  return (
+    <span className={styles.amountNarrow}>
+      <span>{data.amount}</span>
+      <span className={`${styles.code} ${styles.status}`}>{data.status}</span>
+    </span>
+  );
+}
+
 function Who({ data }: ICellRendererParams<StepRow>) {
   if (!data) return null;
   return (
@@ -78,23 +105,51 @@ const COLUMNS: ColDef<StepRow>[] = [
     tooltipValueGetter: (p) => (p.data ? `${p.data.what} · ${p.data.call}` : ""),
   },
   { headerName: "Amount", field: "amount", comparator: byField("amountCents"), type: "rightAligned", width: 116, minWidth: 112 },
-  { headerName: "Status", field: "status", width: 124, minWidth: 120, cellClass: styles.status },
-  { headerName: "PayPal ID", field: "paypalId", width: 232, minWidth: 200, cellClass: styles.code, tooltipField: "paypalId" },
-  { headerName: "PayPal-Request-Id", field: "requestId", width: 318, minWidth: 220, cellClass: styles.code, tooltipField: "requestId" },
+  { headerName: "Status", field: "status", width: 148, minWidth: 140, cellClass: `${styles.code} ${styles.status}` },
+  { headerName: "PayPal ID", field: "paypalId", width: 220, minWidth: 200, cellClass: styles.code, tooltipField: "paypalId" },
+  { headerName: "PayPal-Request-Id", field: "requestId", flex: 1, minWidth: 316, cellClass: styles.code, tooltipField: "requestId" },
 ];
+
+// Under this width the table drops When, Who, Status and both IDs into the cells that stay: What (with who and when)
+// and Amount (with the status), so a phone never scrolls sideways to find a figure. The IDs stay on the block panel.
+const NARROW = 760;
+
+const NARROW_COLUMNS: ColDef<StepRow>[] = COLUMNS.map((col) => {
+  switch (col.field) {
+    case "what":
+      return { ...col, cellRenderer: WhatNarrow, minWidth: 0, wrapText: true, autoHeight: true };
+    case "amount":
+      return { ...col, cellRenderer: AmountNarrow, width: 124, minWidth: 116 };
+    default:
+      return { ...col, hide: true };
+  }
+});
 
 const DEFAULT_COLUMN: ColDef<StepRow> = { sortable: true, resizable: true, suppressMovable: true };
 
 export function PayPalStepsGrid({ rows }: { rows: StepRow[] }) {
-  if (rows.length === 0) {
+  const box = useRef<HTMLDivElement>(null);
+  const [narrow, setNarrow] = useState(false);
+  const empty = rows.length === 0;
+
+  // The observer reports the box's width as soon as it starts observing, before the first paint.
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setNarrow(el.clientWidth < NARROW));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [empty]);
+
+  if (empty) {
     return <p className={styles.empty}>No PayPal calls yet. The first bill Margaret pays shows up here, step by step.</p>;
   }
   return (
-    <div className={styles.grid}>
+    <div className={styles.grid} ref={box}>
       <AgGridReact<StepRow>
         theme={quiltTheme}
         rowData={rows}
-        columnDefs={COLUMNS}
+        columnDefs={narrow ? NARROW_COLUMNS : COLUMNS}
         defaultColDef={DEFAULT_COLUMN}
         getRowId={(params) => params.data.id}
         domLayout="autoHeight"

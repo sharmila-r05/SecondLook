@@ -34,6 +34,35 @@
   font-size: 0.875rem;
 }
 
+/* On a phone the What cell wraps and grows, and carries who set the call going. */
+.wrap {
+  gap: 1px;
+  padding-block: 12px;
+}
+
+.wrap .whatMain,
+.wrap .whatCall {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.whatBy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.amountNarrow {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  padding-block: 12px;
+  line-height: 1.3;
+}
+
 .who {
   display: inline-flex;
   align-items: center;
@@ -70,5 +99,5 @@
 }
 
 .status {
-  font-weight: 700;
+  font-weight: 600;
 }
