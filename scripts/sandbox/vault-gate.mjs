@@ -4,8 +4,9 @@
 //                    Approving it needs a person logged in at sandbox.paypal.com as Margaret's sandbox account.
 //   finish [id]      After approval: read the setup token, POST /v3/vault/payment-tokens, then run `order` with the
 //                    new vault id. Without an id, uses the setup token from the last `setup` run.
-//   order <vault_id> AUTHORIZE orders with payment_source.paypal.vault_id: does the hold come back at create, with no
-//                    buyer step? Replays the create, voids that hold, then captures a small second one.
+//   order [vault_id] AUTHORIZE orders with payment_source.paypal.vault_id: does the hold come back at create, with no
+//                    buyer step? Replays the create, voids that hold, then captures a small second one. Without an
+//                    id, uses the PayPal Margaret most recently connected in the app (the local database).
 //   purchase         The alternative: an AUTHORIZE order with attributes.vault.store_in_vault ON_SUCCESS (vault
 //                    during the first bill). Prints the approve link.
 //   purchase-finish [order_id]  After approval: authorize, read the vault id off the authorization response, void
@@ -23,7 +24,8 @@ import { firstAuthorization, newRequestId, redact, say, startGate, usd, verdict 
 const SCRIPT = "vault-gate";
 const RUNS = fileURLToPath(new URL(`../../tmp/sandbox-runs/${SCRIPT}/`, import.meta.url));
 const FIXTURES = fileURLToPath(new URL("../../test/fixtures/paypal/", import.meta.url));
-// Where PayPal sends the browser after approval. Nothing needs to answer there: the ids are printed below.
+// Where PayPal sends the browser after approval. Nothing answers there (a "not found" page is expected): the ids
+// are printed here and saved under tmp/.
 const RETURN = "http://localhost:3104/gate/vault-approved";
 const CANCEL = "http://localhost:3104/gate/vault-cancelled";
 
@@ -107,8 +109,21 @@ const vaultedOrder = (vaultId, cents, label) => ({
   payment_source: { paypal: { vault_id: vaultId } },
 });
 
-async function order(vaultId) {
-  if (!vaultId) throw new Error("pass the vault id (payment token id)");
+// The PayPal Margaret most recently connected through the app's "Connect PayPal" (never printed).
+async function connectedInApp() {
+  const { default: postgres } = await import("postgres");
+  const sql = postgres(process.env.DATABASE_URL, { max: 1, onnotice: () => {} });
+  try {
+    const [row] = await sql`select paypal_vault_id as id from members where paypal_vault_id is not null order by vaulted_at desc limit 1`;
+    return row?.id;
+  } finally {
+    await sql.end();
+  }
+}
+
+async function order(given) {
+  const vaultId = given ?? (await connectedInApp());
+  if (!vaultId) throw new Error("no vault id: pass one, or connect Margaret's PayPal in the app first");
   const requestId = newRequestId();
   const body = vaultedOrder(vaultId, 8400, "gate-vault-1");
   const created = await gate.post("4-order-vaulted", "/v2/checkout/orders", body, { requestId });
