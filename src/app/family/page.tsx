@@ -11,6 +11,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { FamilyAlerts } from "@/components/push/FamilyAlerts";
+import { LiveRefresh } from "@/components/push/LiveRefresh";
 import { Frame } from "@/components/quilt/Frame";
 import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
@@ -108,6 +110,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
 
   return (
     <Frame role={as}>
+      <LiveRefresh />
       <div className={styles.phone}>
         <div className={styles.screen}>
           {tab === "needs" && (
@@ -118,6 +121,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
               ) : (
                 waiting.map((item) => <SecondLookCard key={item.id} item={item} as={as} />)
               )}
+              <FamilyAlerts as={as} />
 
               <CareNeedsCard care={care} as={as} careHref={href("care")} />
 

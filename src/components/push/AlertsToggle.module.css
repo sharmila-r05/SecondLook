@@ -1,0 +1,79 @@
+/* "Get alerts on this phone": one quiet control on the family screen. Every state keeps about the same height, so the
+   cards below never move when the browser answers. */
+
+.alerts {
+  display: grid;
+  gap: 8px;
+  min-height: 46px;
+  align-content: center;
+}
+
+.turnOn {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 16px 0 14px;
+  border: 2px solid var(--plum-700);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1.0625rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.turnOn:hover {
+  filter: brightness(0.96);
+}
+
+.turnOn:disabled {
+  cursor: progress;
+  color: var(--ink-muted);
+}
+
+.buttonIcon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--plum-700);
+}
+
+.line {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  color: var(--plum-700);
+}
+
+.link {
+  /* A taller hit area than the text, without moving the line. */
+  margin: -6px 0;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 0.08em;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turnOn {
+    transition: none;
+  }
+}
