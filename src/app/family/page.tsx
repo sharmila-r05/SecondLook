@@ -1,15 +1,4 @@
-import {
-  Banknote,
-  CalendarClock,
-  CircleDollarSign,
-  HeartHandshake,
-  MessageSquareText,
-  Timer,
-  TrendingUp,
-  UserPlus,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { CircleDollarSign, HeartHandshake, Users } from "lucide-react";
 import Link from "next/link";
 import { after } from "next/server";
 import { FamilyAlerts } from "@/components/push/FamilyAlerts";
@@ -21,38 +10,47 @@ import { sweepExpiredHolds, sweepOtherExpiredHolds } from "@/lib/bills";
 import { getCare, refreshCare } from "@/lib/care";
 import { cancelsAt, familyCard, type SecondLook } from "@/lib/copy/family";
 import { ensureFamily, getSecondLooks } from "@/lib/family";
-import type { RuleId } from "@/lib/risk";
 import { getSessionId } from "@/lib/session";
 import { decide } from "./actions";
 import { WeekQuilt } from "@/components/ledger/WeekQuilt";
 import { buildLedger } from "@/lib/ledger";
 import { getLedgerInput } from "@/lib/ledger-data";
 import { CareNeedsCard, CareTab } from "./CareCards";
-import { PhoneQr } from "./PhoneQr";
+import { DecideButtons } from "./DecideButtons";
+import { PhoneQr, phoneQrCode } from "./PhoneQr";
 import styles from "./family.module.css";
 
 export const dynamic = "force-dynamic";
 
-const RULE_ICONS: Record<RuleId, LucideIcon> = {
-  new_payee: UserPlus,
-  over_limit: Banknote,
-  unusual_amount: TrendingUp,
-  scam_wording: MessageSquareText,
-  urgency: Timer,
-  daily_total: CalendarClock,
-};
-
 type Tab = "needs" | "money" | "care";
 
-function SecondLookCard({ item, as }: { item: SecondLook; as: "sarah" | "tom" }) {
+/** How long a decided payment stays where it was decided, so the card changes in place instead of jumping away. */
+const RECENT_MS = 15 * 60_000;
+
+/**
+ * "Needs you" lists what waits plus what was decided in the last few minutes, in the order the payments came in, so a
+ * card keeps its place when Sarah or Tom decides it. Older decisions go under "Decided this week".
+ */
+function splitLooks(looks: SecondLook[]): { now: SecondLook[]; earlier: SecondLook[] } {
+  const since = Date.now() - RECENT_MS;
+  const isNow = (l: SecondLook) => l.status === "held" || l.decidedAt.getTime() > since;
+  return {
+    now: looks.filter(isNow).sort((a, b) => b.at.getTime() - a.at.getTime()),
+    earlier: looks.filter((l) => !isNow(l)),
+  };
+}
+
+function SecondLookCard({ item, as, recent = false }: { item: SecondLook; as: "sarah" | "tom"; recent?: boolean }) {
   const card = familyCard(item);
   const stitch = card.tone === "waiting" ? "basting" : card.tone === "released" ? "pulled" : "sewn";
   const mark = card.tone === "waiting" ? "waiting" : card.tone === "released" ? "declined" : "settled";
+  // An approval is filled in the fabric of whoever gave it, as their actions are everywhere else.
+  const fabric = item.decidedBy === "Tom" ? "var(--tom)" : item.decidedBy === "Sarah" ? "var(--sarah)" : undefined;
   return (
-    <article className={styles.card} data-tone={card.tone} aria-labelledby={`look-${item.id}`}>
+    <article className={styles.card} data-tone={card.tone} data-recent={recent || undefined} aria-labelledby={`look-${item.id}`}>
       <Stitch kind={stitch} />
       <div className={styles.cardHead}>
-        <StateMark state={mark} />
+        <StateMark state={mark} fabric={fabric} />
         <div>
           <h2 id={`look-${item.id}`} className={styles.cardTitle}>
             {card.title}
@@ -65,25 +63,16 @@ function SecondLookCard({ item, as }: { item: SecondLook; as: "sarah" | "tom" })
         <>
           {item.note && <p className={styles.note}>{item.note}</p>}
           <ul className={styles.chips} aria-label="Why it was held">
-            {item.rules.map((rule) => {
-              const Icon = RULE_ICONS[rule.id];
-              return (
-                <li key={`${rule.id}-${rule.chip}`} className={styles.chip} title={rule.fact}>
-                  <Icon className={styles.chipIcon} aria-hidden="true" />
-                  {rule.chip}
-                </li>
-              );
-            })}
+            {item.rules.map((rule) => (
+              <li key={`${rule.id}-${rule.chip}`} className={styles.chip} title={rule.fact}>
+                {rule.chip}
+              </li>
+            ))}
           </ul>
           <form action={decide} className={styles.decide}>
             <input type="hidden" name="request" value={item.id} />
             {as === "tom" && <input type="hidden" name="as" value="tom" />}
-            <button type="submit" name="decision" value="deny" className={styles.deny}>
-              Deny and cancel
-            </button>
-            <button type="submit" name="decision" value="approve" className={styles.approve}>
-              Approve and pay
-            </button>
+            <DecideButtons denyClass={styles.deny} approveClass={styles.approve} />
           </form>
           <p className={styles.expires}>{cancelsAt(item)}</p>
         </>
@@ -103,13 +92,14 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
   await sweepExpiredHolds(family, sessionId);
   after(() => sweepOtherExpiredHolds());
   await refreshCare(family, sessionId);
-  const [looks, care, ledger] = await Promise.all([
+  const [looks, care, ledger, qr] = await Promise.all([
     getSecondLooks(family),
     getCare(family),
     tab === "money" ? getLedgerInput(family).then((input) => buildLedger(input)) : null,
+    tab === "needs" ? phoneQrCode(sessionId, as) : null,
   ]);
   const waiting = looks.filter((l) => l.status === "held");
-  const decided = looks.filter((l) => l.status !== "held");
+  const { now, earlier } = splitLooks(looks);
   const href = (t: Tab) => {
     const q = new URLSearchParams();
     if (as === "tom") q.set("as", "tom");
@@ -118,74 +108,81 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
     return s ? `/family?${s}` : "/family";
   };
 
+  // While a payment waits, the decision comes first and the alerts control waits below the care card. Keyed, so the
+  // control keeps its state when it moves.
+  const alerts = <FamilyAlerts key="alerts" as={as} />;
+  const careCard = <CareNeedsCard key="care" care={care} as={as} careHref={href("care")} />;
+
   return (
     <Frame role={as}>
       <LiveRefresh />
-      <div className={styles.phone}>
-        <div className={styles.screen}>
-          {tab === "needs" && (
-            <>
-              <h1 className={styles.heading}>Needs you</h1>
-              {params.join === "expired" && (
-                <p className={styles.explain} role="status">
-                  That code had expired, so this phone has its own demo family. Scan the code on the computer again to join.
+      <div className={styles.stage}>
+        <div className={styles.phone}>
+          <div className={styles.screen}>
+            {tab === "needs" && (
+              <>
+                <h1 className={styles.heading}>Needs you</h1>
+                {params.join === "expired" && (
+                  <p className={styles.explain} role="status">
+                    That code had expired, so this phone has its own demo family. Scan the code on the computer again to join.
+                  </p>
+                )}
+                {now.length === 0 && <p className={styles.empty}>Nothing needs you right now. Mom&rsquo;s bills are going through on their own.</p>}
+                {now.map((item) => (
+                  <SecondLookCard key={item.id} item={item} as={as} recent={item.status !== "held"} />
+                ))}
+                {now.length > 0 && waiting.length === 0 && <p className={styles.empty}>Nothing else needs you right now.</p>}
+
+                {waiting.length > 0 ? [careCard, alerts] : [alerts, careCard]}
+
+                {earlier.length > 0 && (
+                  <>
+                    <h2 className={styles.subheading}>Decided this week</h2>
+                    {earlier.map((item) => (
+                      <SecondLookCard key={item.id} item={item} as={as} />
+                    ))}
+                  </>
+                )}
+                {qr && <PhoneQr qr={qr} placement="column" />}
+              </>
+            )}
+
+            {tab === "money" && (
+              <>
+                <h1 className={styles.heading}>Money</h1>
+                <p className={styles.explain}>
+                  Every money move this week, in the colour of whoever set it going. Tap a block to see the PayPal steps behind it, or open the{" "}
+                  <Link href="/ledger" className={styles.textLink}>
+                    full ledger
+                  </Link>
+                  .
                 </p>
-              )}
-              {waiting.length === 0 ? (
-                <p className={styles.empty}>Nothing needs you right now. Mom&rsquo;s bills are going through on their own.</p>
-              ) : (
-                waiting.map((item) => <SecondLookCard key={item.id} item={item} as={as} />)
-              )}
-              <FamilyAlerts as={as} />
+                {ledger && <WeekQuilt weeks={ledger.weeks} initialSelected={ledger.selected} />}
+              </>
+            )}
 
-              <CareNeedsCard care={care} as={as} careHref={href("care")} />
+            {tab === "care" && <CareTab care={care} as={as} />}
+          </div>
 
-              {decided.length > 0 && (
-                <>
-                  <h2 className={styles.subheading}>Decided this week</h2>
-                  {decided.map((item) => (
-                    <SecondLookCard key={item.id} item={item} as={as} />
-                  ))}
-                </>
-              )}
-              <PhoneQr sessionId={sessionId} as={as} />
-            </>
-          )}
-
-          {tab === "money" && (
-            <>
-              <h1 className={styles.heading}>Money</h1>
-              <p className={styles.explain}>
-                Every money move this week, in the colour of whoever set it going. Tap a block to see the PayPal steps behind it, or open the{" "}
-                <Link href="/ledger" className={styles.textLink}>
-                  full ledger
-                </Link>
-                .
-              </p>
-              {ledger && <WeekQuilt weeks={ledger.weeks} initialSelected={ledger.selected} />}
-            </>
-          )}
-
-          {tab === "care" && <CareTab care={care} as={as} />}
+          <nav className={styles.tabbar} aria-label="Family">
+            <Link href={href("needs")} className={styles.tab} aria-current={tab === "needs" ? "page" : undefined}>
+              <span className={styles.tabIcon}>
+                <Users aria-hidden="true" />
+                {waiting.length > 0 && <span className={styles.badge}>{waiting.length}</span>}
+              </span>
+              Needs you
+            </Link>
+            <Link href={href("money")} className={styles.tab} aria-current={tab === "money" ? "page" : undefined}>
+              <CircleDollarSign className={styles.tabIcon} aria-hidden="true" />
+              Money
+            </Link>
+            <Link href={href("care")} className={styles.tab} aria-current={tab === "care" ? "page" : undefined}>
+              <HeartHandshake className={styles.tabIcon} aria-hidden="true" />
+              Care
+            </Link>
+          </nav>
         </div>
-
-        <nav className={styles.tabbar} aria-label="Family">
-          <Link href={href("needs")} className={styles.tab} aria-current={tab === "needs" ? "page" : undefined}>
-            <span className={styles.tabIcon}>
-              <Users aria-hidden="true" />
-              {waiting.length > 0 && <span className={styles.badge}>{waiting.length}</span>}
-            </span>
-            Needs you
-          </Link>
-          <Link href={href("money")} className={styles.tab} aria-current={tab === "money" ? "page" : undefined}>
-            <CircleDollarSign className={styles.tabIcon} aria-hidden="true" />
-            Money
-          </Link>
-          <Link href={href("care")} className={styles.tab} aria-current={tab === "care" ? "page" : undefined}>
-            <HeartHandshake className={styles.tabIcon} aria-hidden="true" />
-            Care
-          </Link>
-        </nav>
+        {qr && <PhoneQr qr={qr} placement="side" />}
       </div>
     </Frame>
   );

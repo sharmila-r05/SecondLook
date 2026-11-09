@@ -1,5 +1,12 @@
 /* Sarah's and Tom's phone view (WCAG AA). On a desktop it stays a phone-width column, as they'd see it. */
 
+/* The phone column, and on a wide desktop the QR code beside it. */
+.stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
 .phone {
   display: flex;
   flex: 1;
@@ -16,7 +23,7 @@
   flex: 1;
   flex-direction: column;
   gap: 16px;
-  padding: 24px 18px 28px;
+  padding: 24px 14px 28px;
   font-size: 1.0625rem;
   line-height: 1.45;
 }
@@ -27,11 +34,13 @@
   line-height: 1.15;
 }
 
+/* One step between the 30px page heading and the 19px card titles. */
 .subheading {
-  margin-top: 12px;
-  color: var(--ink-muted);
-  font-size: 1.125rem;
+  margin-top: 20px;
+  color: var(--ink);
+  font-size: 1.375rem;
   font-weight: 800;
+  line-height: 1.2;
 }
 
 .empty {
@@ -64,9 +73,17 @@
   align-items: start;
 }
 
+/* A payment that waits (or was just decided, and changes in place): the mark on its own row, the sentence full width
+   below it with one left edge, as in the comp. */
+.card[data-tone="waiting"] .cardHead,
+.card[data-recent] .cardHead {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
 .cardTitle {
   font-size: 1.1875rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.25;
   text-wrap: balance;
 }
@@ -97,7 +114,6 @@
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   min-height: 34px;
   padding: 4px 12px;
   border-radius: 999px;
@@ -105,12 +121,7 @@
   box-shadow: inset 0 0 0 1px rgb(26 23 32 / 0.28);
   font-size: 0.9375rem;
   font-weight: 700;
-}
-
-.chipIcon {
-  width: 17px;
-  height: 17px;
-  color: var(--plum-700);
+  white-space: nowrap;
 }
 
 .decide {
@@ -159,15 +170,46 @@
   filter: brightness(1.25);
 }
 
+/* Side by side on a phone, as in the comp: on the narrowest phones a label wraps inside its 54px button ("Deny and /
+   cancel") rather than the pair stacking. */
+.deny,
+.approve {
+  padding: 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+  text-wrap: balance;
+}
+
+/* While PayPal works: the tapped button says what is happening, the other steps back. */
+.deny:disabled,
+.approve:disabled {
+  cursor: progress;
+  filter: none;
+}
+
+.deny:disabled:not([aria-busy]),
+.approve:disabled:not([aria-busy]) {
+  opacity: 0.45;
+}
+
+/* Rosa's work: her sage, in the care card's thread. */
 .secondary {
   justify-self: start;
   min-height: 46px;
   border-color: var(--rosa);
-  color: var(--ink);
+  color: var(--rosa);
 }
 
-/* Too narrow for both buttons side by side without wrapping: stack them, Approve last as in the comp's reading order. */
-@container (max-width: 330px) {
+.aideName {
+  color: var(--rosa);
+  font-weight: 700;
+}
+
+/* Only below about 260px of card width do the two buttons stack, Approve last as in the comp's reading order. */
+@container (max-width: 259px) {
   .decide {
     grid-template-columns: 1fr;
   }
@@ -262,11 +304,13 @@
   font-size: 0.9375rem;
 }
 
-.phoneQr {
+.phoneQr,
+.phoneQrSide {
   display: none;
 }
 
-/* Only where a second device makes sense: a desktop screen showing the phone column. */
+/* Only where a second device makes sense: a desktop screen showing the phone column. At the foot of the column on a
+   narrower desktop... */
 @media (min-width: 760px) and (hover: hover) {
   .phoneQr {
     display: grid;
@@ -277,6 +321,41 @@
     padding: 16px;
     border-radius: var(--radius-row);
     background: var(--ground-raised);
+  }
+}
+
+/* ...and beside the phone on a wide one, where it is seen without scrolling past the family's cards. */
+@media (min-width: 1100px) and (hover: hover) {
+  .stage {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 480px) 1fr;
+    gap: 24px;
+  }
+
+  .stage > .phone {
+    grid-column: 2;
+  }
+
+  .phoneQr {
+    display: none;
+  }
+
+  .phoneQrSide {
+    position: sticky;
+    top: 24px;
+    display: grid;
+    grid-column: 3;
+    gap: 14px;
+    align-self: start;
+    max-width: 300px;
+    padding: 18px;
+    border-radius: var(--radius-block);
+    background: var(--ground-raised);
+  }
+
+  .phoneQrSide .qr {
+    width: 152px;
+    height: 152px;
   }
 }
 
@@ -298,6 +377,7 @@
   margin-bottom: 4px;
   font-size: 1.0625rem;
   font-weight: 800;
+  text-wrap: balance;
 }
 
 .expires {

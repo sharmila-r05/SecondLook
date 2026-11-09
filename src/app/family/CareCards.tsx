@@ -54,15 +54,16 @@ export function CareNeedsCard({ care, as, careHref }: { care: CareView; as: View
   if (open.visits.length > 0) {
     return (
       <article className={`${styles.card} ${styles.care}`} aria-labelledby="care-ready">
-        <Stitch kind="basting" />
+        <Stitch kind="sage" />
         <div className={styles.cardHead}>
-          <StateMark state="waiting" fabric="var(--rosa)" />
+          <StateMark state="settled" fabric="var(--rosa)" />
           <div>
             <h2 id="care-ready" className={styles.cardTitle}>
               This week&rsquo;s care is ready to close
             </h2>
             <p className={styles.when}>
-              {care.aide} came {times(open.visits.length)} · {formatUsd(open.totalCents)}
+              <span className={styles.aideName}>{care.aide}</span> came {times(open.visits.length)} ·{" "}
+              <span className={styles.amount}>{formatUsd(open.totalCents)}</span>
             </p>
           </div>
         </div>
@@ -79,9 +80,9 @@ export function CareNeedsCard({ care, as, careHref }: { care: CareView; as: View
   if (myShare) {
     return (
       <article className={`${styles.card} ${styles.care}`} aria-labelledby="care-share">
-        <Stitch kind="basting" />
+        <Stitch kind="sage" />
         <div className={styles.cardHead}>
-          <StateMark state="waiting" fabric="var(--rosa)" />
+          <StateMark state="waiting" thread="var(--rosa)" />
           <div>
             <h2 id="care-share" className={styles.cardTitle}>
               Your share of {care.aide}&rsquo;s week: {formatUsd(myShare.amountCents)}
@@ -124,9 +125,9 @@ export function CareTab({ care, as }: { care: CareView; as: Viewer }) {
       <h1 className={styles.heading}>Care</h1>
 
       <article className={`${styles.card} ${styles.care}`} aria-labelledby="care-open">
-        <Stitch kind={open.visits.length > 0 ? "basting" : "sewn"} />
+        <Stitch kind={open.visits.length > 0 ? "sage" : "sewn"} />
         <div className={styles.cardHead}>
-          <StateMark state={open.visits.length > 0 ? "waiting" : "settled"} fabric="var(--rosa)" />
+          <StateMark state="settled" fabric="var(--rosa)" />
           <div>
             <h2 id="care-open" className={styles.cardTitle}>
               {open.visits.length > 0 ? `${care.aide} came ${times(open.visits.length)}` : `No new visits from ${care.aide}`}
@@ -167,7 +168,7 @@ export function CareTab({ care, as }: { care: CareView; as: Viewer }) {
         <>
           <h2 className={styles.subheading}>Last closed</h2>
           <article className={`${styles.card} ${styles.care}`} aria-labelledby="care-last">
-            <Stitch kind={last.shares.every((s) => s.status === "paid") && last.payoutStatus === "SUCCESS" ? "sewn" : "basting"} />
+            <Stitch kind={last.shares.every((s) => s.status === "paid") && last.payoutStatus === "SUCCESS" ? "sewn" : "sage"} />
             <div className={styles.cardHead}>
               <StateMark state={last.status === "closed" ? "settled" : "processing"} fabric="var(--rosa)" />
               <div>

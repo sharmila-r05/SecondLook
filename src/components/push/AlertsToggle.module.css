@@ -4,23 +4,24 @@
 .alerts {
   display: grid;
   gap: 8px;
-  min-height: 46px;
+  min-height: 44px;
   align-content: center;
 }
 
+/* Quieter than the decision buttons: a hairline, not the plum outline Deny wears. */
 .turnOn {
   display: inline-flex;
   align-items: center;
   justify-self: start;
   gap: 10px;
-  min-height: 46px;
+  min-height: 44px;
   padding: 0 16px 0 14px;
-  border: 2px solid var(--plum-700);
+  border: 1px solid rgb(26 23 32 / 0.28);
   border-radius: 12px;
   background: var(--paper);
   color: var(--ink);
   font-size: 1.0625rem;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
