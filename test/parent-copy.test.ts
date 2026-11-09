@@ -65,3 +65,13 @@ describe("templateNote", () => {
     ).toBe("Microsoft Support isn’t on the family’s list. She mentioned “hacked”.");
   });
 });
+
+describe("CONNECT_COPY", () => {
+  it("asks her to connect PayPal in plain words, never naming the mechanism (hard rule 2)", async () => {
+    const { CONNECT_COPY } = await import("@/lib/copy/parent");
+    for (const text of Object.values(CONNECT_COPY)) {
+      expect(text).not.toMatch(/scam|fraud|hold|authori[sz]|risk|suspicious|blocked|warning|alert|vault|token|agreement/i);
+    }
+    expect(CONNECT_COPY.body).toMatch(/Only bills you say yes to are paid/);
+  });
+});

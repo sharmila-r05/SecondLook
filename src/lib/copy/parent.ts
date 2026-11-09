@@ -86,3 +86,16 @@ export function orderForParent(entries: readonly ParentEntry[]): ParentEntry[] {
   const waiting = (e: ParentEntry) => (e.kind === "bill" && e.state === "waiting" ? 0 : 1);
   return [...entries].sort((a, b) => waiting(a) - waiting(b) || b.at.getTime() - a.at.getTime());
 }
+
+/**
+ * "Connect PayPal once" on Margaret's screen, and what she is told after. Plain words: no "vault", "token" or
+ * "agreement". It says what she agrees to (only bills she says yes to are paid) before PayPal asks her.
+ */
+export const CONNECT_COPY = {
+  heading: "Connect your PayPal once",
+  body: "PayPal asks you one time. After that, “Yes, pay it” is all it takes. Only bills you say yes to are paid.",
+  button: "Connect PayPal",
+  pending: "One moment…",
+  connected: "Your PayPal is connected. Now “Yes, pay it” is all it takes.",
+  notConnected: "Your PayPal isn’t connected, so nothing changed. You can connect it any time.",
+} as const;

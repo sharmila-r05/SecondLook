@@ -1,12 +1,33 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { VISIT_RATE_CENTS } from "@/lib/demo/seed";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily } from "@/lib/family";
+import { PayPalError } from "@/lib/paypal";
 import { getSessionId } from "@/lib/session";
 import { localDate } from "@/lib/time";
+import { savedPayPal, startConnect } from "@/lib/vault";
+
+/** "Connect PayPal": sends Margaret to PayPal once, to let Second Look pay the bills she says yes to. */
+export async function connectPayPal(): Promise<void> {
+  const sessionId = await getSessionId();
+  const family = await ensureFamily(sessionId);
+  if (await savedPayPal(family)) redirect("/parent");
+
+  const h = await headers();
+  const origin = process.env.APP_BASE_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+  let approveUrl: string;
+  try {
+    approveUrl = await startConnect(family, sessionId, origin);
+  } catch (err) {
+    console.error("starting a PayPal connection failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);
+    redirect("/parent?paypal=not-connected");
+  }
+  redirect(approveUrl);
+}
 
 /** Margaret says the aide came today. One visit per day: saying it twice changes nothing. */
 export async function confirmVisitToday(): Promise<void> {

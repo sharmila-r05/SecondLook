@@ -15,6 +15,7 @@ export type EventType =
   | "request:expired"
   | "request:paid"
   | "paypal:authorized"
+  | "paypal:vaulted"
   | "paypal:captured"
   | "paypal:voided"
   | "paypal:payout"

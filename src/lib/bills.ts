@@ -1,7 +1,9 @@
-// Margaret's bills through PayPal, pass-through (decided 6 Nov): she approves an AUTHORIZE order to Second Look; the
-// hold is captured at once for a normal bill, or waits for family when the rules asked for a second look. Captured
-// money reaches the payee by Payouts. Every PayPal POST has a payments row whose request id is stored before the
-// call, so a retry replays the same id and PayPal dedupes; each step below is safe to run again.
+// Margaret's bills through PayPal, pass-through (decided 6 Nov): an AUTHORIZE order to Second Look places a hold;
+// the hold is captured at once for a normal bill, or waits for family when the rules asked for a second look.
+// Captured money reaches the payee by Payouts. With her PayPal connected once (src/lib/vault.ts) the order names her
+// saved PayPal and the hold comes back at create; otherwise she approves each order on PayPal's page. Every PayPal
+// POST has a payments row whose request id is stored before the call, so a retry replays the same id and PayPal
+// dedupes; each step below is safe to run again.
 
 import { randomUUID } from "node:crypto";
 import type postgres from "postgres";
@@ -10,9 +12,19 @@ import { SANDBOX_EMAILS } from "@/lib/demo/accounts";
 import { recordEvent } from "@/lib/events";
 import type { Family } from "@/lib/family";
 import { assertCents } from "@/lib/money";
-import { authorizeOrder, captureAuthorization, createAuthorizeOrder, createPayout, getPayout, voidAuthorization } from "@/lib/paypal";
+import {
+  authorizeOrder,
+  captureAuthorization,
+  createAuthorizeOrder,
+  createPayout,
+  getPayout,
+  PayPalError,
+  voidAuthorization,
+} from "@/lib/paypal";
+import { createVaultedAuthorizeOrder } from "@/lib/paypal-vault";
 import type { RuleHit } from "@/lib/risk";
 import { type PaymentRequestState, transition } from "@/lib/states";
+import { forgetSavedPayPal, savedPayPal } from "@/lib/vault";
 
 type Sql = postgres.Sql | postgres.TransactionSql;
 
@@ -81,8 +93,23 @@ async function paymentRow(sql: Sql, requestId: string, kind: string): Promise<Pa
   return row;
 }
 
-/** Step 1, after "Yes, pay it": the AUTHORIZE order Margaret approves on PayPal. Returns where to send her. */
-export async function startBill(family: Pick<Family, "id">, sessionId: string, requestId: string, origin: string): Promise<string> {
+/** Where a bill goes after "Yes, pay it": to PayPal's page for her approval, or straight on to the decision. */
+export type BillStart =
+  | { kind: "paypal"; approveUrl: string }
+  /** Her saved PayPal placed the hold with no PayPal page: settle the bill now (settleBill). */
+  | { kind: "held"; requestId: string };
+
+/** For logs: PayPal's issue and debug_id, never a body or an email. */
+function explain(err: unknown): string {
+  if (err instanceof PayPalError) return `${err.status} ${err.issue} (debug_id ${err.debugId ?? "none"})`;
+  return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * Step 1, after "Yes, pay it": the AUTHORIZE order. With her PayPal connected, the order names the saved PayPal and
+ * the hold comes back at once; if that doesn't work, or she hasn't connected, she approves the order on PayPal.
+ */
+export async function startBill(family: Pick<Family, "id">, sessionId: string, requestId: string, origin: string): Promise<BillStart> {
   const sql = db();
   const bill = await loadRequest(sql, family, requestId);
   let row = await paymentRow(sql, requestId, "authorization");
@@ -94,6 +121,15 @@ export async function startBill(family: Pick<Family, "id">, sessionId: string, r
       returning id, paypal_request_id, order_request_id, paypal_order_id, paypal_authorization_id, paypal_capture_id, paypal_payout_batch_id, status`;
   }
   if (!row?.order_request_id) throw new Error("authorization row has no order request id");
+  if (row.paypal_authorization_id) return { kind: "held", requestId };
+
+  const vaultId = row.paypal_order_id ? null : await savedPayPal(family);
+  if (vaultId) {
+    const started = await holdFromSavedPayPal(family, sessionId, bill, row, vaultId);
+    if (started) return started;
+    row = await paymentRow(sql, requestId, "authorization");
+    if (!row?.order_request_id) throw new Error("authorization row has no order request id");
+  }
 
   const order = await createAuthorizeOrder({
     requestId: row.order_request_id,
@@ -104,12 +140,57 @@ export async function startBill(family: Pick<Family, "id">, sessionId: string, r
     cancelUrl: `${origin}/parent/pay/cancelled?request=${requestId}`,
   });
   await sql`update payments set paypal_order_id = ${order.orderId}, status = ${order.status} where id = ${row.id}`;
-  return order.approveUrl;
+  return { kind: "paypal", approveUrl: order.approveUrl };
 }
 
 /**
- * Step 2, back from PayPal: authorize (the hold), then let the rules' decision stand. A normal bill is captured and
- * paid out now; a payment the rules flagged stays held for family. Safe to call again for the same order.
+ * The order from her saved PayPal. Null when it gave no hold: the row then has a fresh order request id (stored
+ * before the next call), and the caller falls back to PayPal's page. A vault id PayPal refuses is forgotten, so she
+ * is asked to connect again.
+ */
+async function holdFromSavedPayPal(
+  family: Pick<Family, "id">,
+  sessionId: string,
+  bill: BillRequest,
+  row: PaymentRow,
+  vaultId: string,
+): Promise<BillStart | null> {
+  const sql = db();
+  try {
+    const order = await createVaultedAuthorizeOrder({
+      requestId: row.order_request_id ?? "",
+      vaultId,
+      amountCents: bill.amountCents,
+      description: `${bill.payeeName}, paid by Margaret through Second Look`,
+      customId: bill.id,
+    });
+    await sql`update payments set paypal_order_id = ${order.orderId}, status = ${order.status} where id = ${row.id}`;
+    // Expected: the hold at create. An APPROVED order is authorized here, still with no PayPal page for her.
+    const hold = order.authorization ?? (order.status === "APPROVED" ? await authorizeOrder({ orderId: order.orderId, requestId: row.paypal_request_id }) : undefined);
+    if (hold?.status === "CREATED") {
+      await sql`update payments set paypal_authorization_id = ${hold.authorizationId}, status = ${hold.status} where id = ${row.id}`;
+      await recordEvent(sql, family, sessionId, "paypal:authorized", {
+        requestId: bill.id,
+        authorizationId: hold.authorizationId,
+        expiresAt: hold.expiresAt ?? null,
+        savedPayPal: true,
+      });
+      return { kind: "held", requestId: bill.id };
+    }
+    // PayPal wants her after all: this order's own page, which comes back through /parent/pay/return.
+    if (order.status === "PAYER_ACTION_REQUIRED" && order.approveUrl) return { kind: "paypal", approveUrl: order.approveUrl };
+    console.error(`the saved PayPal gave order ${order.status}, hold ${hold?.status ?? "none"} (debug_id ${order.debugId ?? "none"}); asking PayPal instead`);
+  } catch (err) {
+    console.error("paying from the saved PayPal failed; asking PayPal instead:", explain(err));
+    if (err instanceof PayPalError && err.status === 403) await forgetSavedPayPal(family, vaultId);
+  }
+  await sql`update payments set order_request_id = ${randomUUID()}, paypal_order_id = null, status = 'creating' where id = ${row.id}`;
+  return null;
+}
+
+/**
+ * Step 2, back from PayPal: authorize (the hold), then let the rules' decision stand (settleBill). Safe to call
+ * again for the same order.
  */
 export async function finishApproval(
   family: Pick<Family, "id">,
@@ -132,6 +213,23 @@ export async function finishApproval(
     await sql`update payments set paypal_authorization_id = ${hold.authorizationId}, status = ${hold.status} where id = ${row.id}`;
     await recordEvent(sql, family, sessionId, "paypal:authorized", { requestId, authorizationId: hold.authorizationId, expiresAt: hold.expiresAt ?? null });
   }
+  return settleBill(family, sessionId, requestId, holdMinutes, riskNote);
+}
+
+/**
+ * Once the hold is placed, by either path: a normal bill is captured and paid out now; a payment the rules flagged
+ * stays held for family (hard rule 1). Safe to call again.
+ */
+export async function settleBill(
+  family: Pick<Family, "id">,
+  sessionId: string,
+  requestId: string,
+  holdMinutes: number,
+  riskNote: (bill: BillRequest) => Promise<string>,
+): Promise<BillRequest> {
+  const sql = db();
+  const row = await paymentRow(sql, requestId, "authorization");
+  if (!row?.paypal_authorization_id) throw new Error("no hold placed for this bill");
 
   const bill = await loadRequest(sql, family, requestId);
   if (bill.status === "new") {

@@ -4,11 +4,20 @@ import { Frame } from "@/components/quilt/Frame";
 import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
 import { sweepExpiredHolds } from "@/lib/bills";
-import { orderForParent, parentLine } from "@/lib/copy/parent";
+import { CONNECT_COPY, orderForParent, parentLine } from "@/lib/copy/parent";
 import { ensureFamily, getParentDay, memberNamed } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
 import { formatDay } from "@/lib/time";
+import { savedPayPal } from "@/lib/vault";
+import { connectPayPal } from "./actions";
+import { ConnectButton } from "./ConnectButton";
 import styles from "./parent.module.css";
+
+const NOTICES: Record<string, string> = {
+  problem: "PayPal didn’t finish that payment, so nothing was paid. You can try again.",
+  connected: CONNECT_COPY.connected,
+  "not-connected": CONNECT_COPY.notConnected,
+};
 
 // Today's date and entries change through the day.
 export const dynamic = "force-dynamic";
@@ -19,8 +28,10 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
   const family = await ensureFamily(sessionId);
   await sweepExpiredHolds(family, sessionId);
   const { paypal } = await searchParams;
+  const notice = paypal ? NOTICES[paypal] : undefined;
   const lines = orderForParent(await getParentDay(family, now)).map(parentLine);
   const aide = memberNamed(family, "aide") ?? "The aide";
+  const connected = (await savedPayPal(family)) !== null;
 
   return (
     <Frame role="margaret">
@@ -29,9 +40,9 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
           <h1 id="today-heading" className={styles.heading}>
             Today, {formatDay(now)}
           </h1>
-          {paypal === "problem" && (
+          {notice && (
             <p className={styles.notice} role="status">
-              PayPal didn&rsquo;t finish that payment, so nothing was paid. You can try again.
+              {notice}
             </p>
           )}
           {lines.length === 0 ? (
@@ -64,6 +75,20 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
             <span>{aide} came today</span>
           </Link>
         </nav>
+
+        {!connected && (
+          <section className={styles.connect} aria-labelledby="connect-heading">
+            <div className={styles.connectText}>
+              <h2 id="connect-heading" className={styles.connectHeading}>
+                {CONNECT_COPY.heading}
+              </h2>
+              <p className={styles.connectBody}>{CONNECT_COPY.body}</p>
+            </div>
+            <form action={connectPayPal} className={styles.connectForm}>
+              <ConnectButton />
+            </form>
+          </section>
+        )}
       </div>
     </Frame>
   );

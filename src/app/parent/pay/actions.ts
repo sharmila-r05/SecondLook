@@ -8,10 +8,12 @@ import { recordEvent } from "@/lib/events";
 import { ensureFamily, memberNamed } from "@/lib/family";
 import { assertCents, formatUsd } from "@/lib/money";
 import { matchPayee, parseRequest } from "@/lib/parse";
+import { PayPalError } from "@/lib/paypal";
 import { evaluate } from "@/lib/risk";
 import { getSessionId } from "@/lib/session";
 import { localDate, PARENT_TIME_ZONE } from "@/lib/time";
 import { publicOrigin } from "@/lib/redirect";
+import { settleHeldBill } from "./settle";
 
 /** Anything above this is surely a mishearing; she's asked to say it again. */
 const MAX_REQUEST_CENTS = 1_000_000;
@@ -53,8 +55,9 @@ export async function hearRequest(text: string): Promise<ReadBack> {
 }
 
 /**
- * "Yes, pay it": saves the request with the rules' decision, creates the PayPal order and sends Margaret to PayPal to
- * approve it. The decision takes effect once PayPal has authorized the payment (see /parent/pay/return).
+ * "Yes, pay it": saves the request with the rules' decision and creates the PayPal order. With her PayPal connected
+ * once, the order is paid from it and the decision takes effect right here; otherwise she approves the order on
+ * PayPal and the decision takes effect when PayPal sends her back (see /parent/pay/return).
  */
 export async function confirmRequest(input: { said: string; payeeId: string | null; payeeName: string; amountCents: number }): Promise<void> {
   const sessionId = await getSessionId();
@@ -117,5 +120,17 @@ export async function confirmRequest(input: { said: string; payeeId: string | nu
 
   const h = await headers();
   const origin = publicOrigin(h);
-  redirect(await startBill(family, sessionId, requestId, origin));
+  const started = await startBill(family, sessionId, requestId, origin);
+  if (started.kind === "paypal") redirect(started.approveUrl);
+
+  // Her saved PayPal placed the hold with no PayPal page: decide now, and she lands back on today's list.
+  let landing = "/parent";
+  try {
+    await settleHeldBill(family, sessionId, started.requestId);
+  } catch (err) {
+    // Log PayPal's debug_id, never bodies or emails. A capture that didn't finish is retried on the next look.
+    console.error("finishing a bill failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);
+    landing = "/parent?paypal=problem";
+  }
+  redirect(landing);
 }
