@@ -5,6 +5,8 @@ import type { Family } from "@/lib/family";
 
 export type EventType =
   | "visit:confirmed"
+  | "visit:checked_in"
+  | "visit:checked_out"
   | "request:created"
   | "request:approved_auto"
   | "request:held"
