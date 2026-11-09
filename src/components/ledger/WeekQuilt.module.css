@@ -1,0 +1,496 @@
+/* The week-by-week quilt (WCAG 2.2 AA). Blocks are flat fabrics in the colour of whoever set the money moving:
+   white text on teal, cornflower, sage and plum, near-black on ochre (each pair ≥ 6:1). Fine running stitch when
+   settled, rose basting while it waits on family, the basting pulled loose when a hold was let go. */
+
+.quilt {
+  container-type: inline-size;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.side {
+  display: none;
+}
+
+@container (min-width: 860px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+    gap: 32px;
+  }
+
+  .side {
+    display: block;
+    position: sticky;
+    top: 16px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    border-radius: var(--radius-block);
+    overscroll-behavior: contain;
+  }
+
+  .inline {
+    display: none;
+  }
+}
+
+.weeks {
+  display: grid;
+  gap: 26px;
+}
+
+.week {
+  display: grid;
+  gap: 12px;
+}
+
+.week + .week {
+  padding-top: 22px;
+  border-top: 2px dashed rgb(26 23 32 / 0.22);
+}
+
+.weekHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 20px;
+}
+
+.weekHeading {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.closed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cell {
+  display: flex;
+}
+
+.emptyRow {
+  display: grid;
+  place-items: center start;
+  min-height: 120px;
+  padding: 20px 22px;
+  border: 2px dashed rgb(26 23 32 / 0.28);
+  border-radius: var(--radius-row);
+  color: var(--ink-muted);
+  font-size: 1.0625rem;
+}
+
+/* ---- A block ---------------------------------------------------------------------------------------------- */
+
+.block,
+.swatch,
+.dot {
+  --fabric: var(--margaret);
+  --on-fabric: var(--paper);
+  --rose-on: #f6b8cb;
+}
+
+.block[data-fabric="sarah"],
+.swatch[data-fabric="sarah"],
+.dot[data-fabric="sarah"] {
+  --fabric: var(--sarah);
+}
+
+.block[data-fabric="tom"],
+.swatch[data-fabric="tom"],
+.dot[data-fabric="tom"] {
+  --fabric: var(--tom);
+  --on-fabric: var(--ink);
+  --rose-on: #7a2442;
+}
+
+.block[data-fabric="rosa"],
+.swatch[data-fabric="rosa"],
+.dot[data-fabric="rosa"] {
+  --fabric: var(--rosa);
+}
+
+.block[data-fabric="plum"],
+.swatch[data-fabric="plum"],
+.dot[data-fabric="plum"] {
+  --fabric: var(--plum-900);
+}
+
+.block {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: space-between;
+  width: 100%;
+  min-height: 236px;
+  padding: 16px 16px 14px;
+  border: 0;
+  border-radius: var(--radius-block);
+  background: var(--fabric);
+  color: var(--on-fabric);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.block:hover {
+  filter: brightness(1.08);
+}
+
+.block[aria-pressed="true"] {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.block:active {
+  transform: translateY(1px);
+}
+
+/* The thread on fabric: light running stitch, rose basting, basting pulled loose. */
+.block[data-tone="settled"] svg rect,
+.block[data-tone="processing"] svg rect {
+  stroke: color-mix(in srgb, var(--on-fabric) 55%, transparent);
+}
+
+.block[data-tone="waiting"] svg rect,
+.block[data-tone="cancelled"] svg rect {
+  stroke: var(--rose-on);
+}
+
+.block[data-tone="cancelled"] svg rect {
+  opacity: 0.85;
+}
+
+.top {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  font-size: 0.875rem;
+  line-height: 1.3;
+}
+
+.who {
+  font-weight: 800;
+}
+
+.bottom {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  align-self: end;
+  padding-right: 34px;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.amount {
+  margin-top: 2px;
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.label {
+  margin-top: 4px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.mark {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  color: var(--on-fabric);
+}
+
+.rose {
+  stroke: var(--rose-on);
+}
+
+/* The cancelled hold: loose rose threads hanging from the top corner, clear of the words. */
+.pulled {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 76px;
+  height: 68px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pulled path {
+  fill: none;
+  stroke: var(--rose-on);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 6 5;
+}
+
+/* A money move that arrived since the last look stitches itself in. */
+.block[data-fresh] {
+  animation: settle-in 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.block[data-fresh] svg rect {
+  animation: stitch-in 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+@keyframes stitch-in {
+  from {
+    stroke-dashoffset: 240;
+    opacity: 0;
+  }
+}
+
+/* ---- The detail panel --------------------------------------------------------------------------------------- */
+
+.detail {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  padding: 10px 10px 20px;
+  border-radius: var(--radius-block);
+  background: var(--paper);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.detail > :not(.swatch, svg) {
+  margin-inline: 12px;
+}
+
+.detailEmpty {
+  min-height: 160px;
+  align-content: center;
+  padding: 24px;
+  color: var(--ink-muted);
+  font-size: 1.0625rem;
+}
+
+.swatch {
+  display: grid;
+  gap: 2px;
+  padding: 16px 16px 18px;
+  border-radius: 10px;
+  background: var(--fabric);
+  color: var(--on-fabric);
+}
+
+.swatchWho {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.detailTitle {
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.detailAmount {
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+.outcome {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.detail[data-tone="cancelled"] .outcome,
+.detail[data-tone="waiting"] .outcome {
+  color: var(--thread-rose-text);
+}
+
+.story {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.story li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.dot {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 0.25em;
+  border-radius: 4px;
+  background: var(--fabric);
+}
+
+.minor {
+  margin: 0 0 8px;
+  color: var(--ink-muted);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgb(26 23 32 / 0.28);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.paypal {
+  padding-top: 14px;
+  border-top: 1px solid rgb(26 23 32 / 0.14);
+}
+
+.flow {
+  margin-bottom: 10px;
+  color: var(--plum-700);
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.steps {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.step {
+  display: grid;
+  gap: 4px;
+  padding-left: 30px;
+  position: relative;
+  counter-increment: step;
+}
+
+.step::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--plum-900);
+  color: var(--paper);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.call {
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 10px;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.facts dt {
+  color: var(--ink-muted);
+}
+
+.facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.facts code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+}
+
+@container (max-width: 420px) {
+  .row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .block {
+    min-height: 212px;
+    padding: 14px 12px 12px;
+  }
+
+  .pulled {
+    width: 60px;
+    height: 54px;
+  }
+
+  .amount {
+    font-size: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .block {
+    transition: none;
+  }
+
+  .block[data-fresh],
+  .block[data-fresh] svg rect {
+    animation: none;
+  }
+}

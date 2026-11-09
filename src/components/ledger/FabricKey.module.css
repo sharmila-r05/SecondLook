@@ -1,0 +1,52 @@
+.key {
+  display: grid;
+  gap: 6px;
+}
+
+.caption {
+  color: var(--ink-muted);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--margaret);
+}
+
+.swatch[data-fabric="sarah"] {
+  background: var(--sarah);
+}
+
+.swatch[data-fabric="tom"] {
+  background: var(--tom);
+}
+
+.swatch[data-fabric="rosa"] {
+  background: var(--rosa);
+}
+
+.swatch[data-fabric="plum"] {
+  background: var(--plum-900);
+}

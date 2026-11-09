@@ -1,0 +1,68 @@
+/* The shared ledger (WCAG 2.2 AA): desktop first for judges and the video, readable on a phone. */
+
+.page {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: 32px;
+  padding: 30px 32px 44px;
+  border-radius: var(--radius-block);
+  background: var(--ground);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px 40px;
+}
+
+.intro {
+  display: grid;
+  gap: 6px;
+  max-width: 62ch;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.lede {
+  color: var(--ink-muted);
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+
+.steps {
+  display: grid;
+  gap: 14px;
+  padding-top: 26px;
+  border-top: 2px dashed rgb(26 23 32 / 0.22);
+}
+
+.stepsHead {
+  display: grid;
+  gap: 6px;
+  max-width: 78ch;
+}
+
+.subheading {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+@media (max-width: 760px) {
+  .page {
+    gap: 24px;
+    padding: 22px 16px 32px;
+  }
+
+  .heading {
+    font-size: 1.75rem;
+  }
+}
