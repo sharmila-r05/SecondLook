@@ -88,10 +88,24 @@
   cursor: pointer;
 }
 
-.next:disabled,
 .mic:disabled {
   cursor: default;
   opacity: 0.6;
+}
+
+/* Next before anything is typed: quiet, not a faded teal that reads as broken (and keeps AAA text). */
+.next:disabled {
+  background: var(--ground-raised);
+  box-shadow: inset 0 0 0 2px var(--ink-muted);
+  color: var(--ink-muted);
+  cursor: default;
+}
+
+/* The two live regions stay in the page for screen readers, but take no room while they're empty. */
+.words:empty,
+.message:empty {
+  min-height: 0;
+  margin-top: -28px;
 }
 
 .message {
@@ -110,7 +124,7 @@
 
 @media (max-width: 760px) {
   .mic {
-    min-height: 160px;
+    min-height: 136px;
     font-size: 1.75rem;
   }
 

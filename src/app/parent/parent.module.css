@@ -8,11 +8,17 @@
   gap: 20px;
 }
 
+/* The comp's value ladder: a mid grey-blue panel, settled rows a step lighter, the waiting row the one warm, light
+   patch. Ink on each stays AAA (8.4:1, 7.9:1, 9.6:1). */
 .today {
   position: relative;
+  display: flex;
+  grid-column: 1;
+  grid-row: 1;
+  flex-direction: column;
   padding: 32px 32px 28px;
   border-radius: var(--radius-block);
-  background: var(--ground);
+  background: #aab4b8;
 }
 
 .heading {
@@ -36,8 +42,21 @@
 }
 
 .empty {
+  display: grid;
+  flex: 1;
+  place-content: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.emptyHint {
+  max-width: 24ch;
+  margin: 0 auto;
   font-size: 1.5rem;
-  color: var(--ink-muted);
+  font-weight: 400;
 }
 
 .entries {
@@ -56,22 +75,28 @@
   align-items: start;
   padding: 26px 30px;
   border-radius: var(--radius-row);
-  background: var(--ground-raised);
+  background: #d3dade;
   font-size: 1.625rem;
   line-height: 1.35;
 }
 
 .entry[data-stitch="basting"] {
-  background: var(--paper);
+  background: #f4ece4;
 }
 
 .mark {
-  grid-row: span 2;
+  grid-row: span 3;
   padding-top: 1px;
 }
 
 .title {
   font-weight: 700;
+}
+
+.amount {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .detail {
@@ -80,6 +105,8 @@
 
 .actions {
   display: grid;
+  grid-column: 2;
+  grid-row: 1 / span 2;
   grid-template-rows: 1fr 1fr;
   gap: 20px;
 }
@@ -129,7 +156,8 @@
 
 /* "Connect your PayPal once": shown until she has, under everything else; one sentence pair and one button. */
 .connect {
-  grid-column: 1 / -1;
+  grid-column: 1;
+  grid-row: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -204,7 +232,15 @@
     font-size: 1.375rem;
   }
 
+  .today,
+  .connect {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
   .actions {
+    grid-column: auto;
+    grid-row: auto;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: none;
     gap: 12px;
@@ -248,5 +284,31 @@
   .action,
   .connectButton {
     transition: none;
+  }
+}
+
+/* Margaret's tablet and desktop: the comp's large, calm size. */
+@media (min-width: 1100px) {
+  .heading {
+    font-size: 2.5rem;
+  }
+
+  .entry {
+    grid-template-columns: 48px minmax(0, 1fr);
+    font-size: 2rem;
+  }
+
+  .mark svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .action {
+    font-size: 3rem;
+  }
+
+  .icon {
+    width: 112px;
+    height: 112px;
   }
 }

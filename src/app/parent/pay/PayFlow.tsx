@@ -151,7 +151,6 @@ export function PayFlow() {
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             autoComplete="off"
-            placeholder="Pay the electric bill, $84"
           />
           <button type="submit" className={pay.next} disabled={pending || !typed.trim()}>
             {pending ? "One moment…" : "Next"}

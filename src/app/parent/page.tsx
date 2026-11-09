@@ -39,6 +39,7 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
     <Frame role="margaret">
       <div className={styles.layout}>
         <section className={styles.today} aria-labelledby="today-heading">
+          <Stitch kind="light" />
           <h1 id="today-heading" className={styles.heading}>
             Today, {formatDay(now)}
           </h1>
@@ -48,7 +49,10 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
             </p>
           )}
           {lines.length === 0 ? (
-            <p className={styles.empty}>Nothing yet today.</p>
+            <div className={styles.empty}>
+              <p>Nothing yet today.</p>
+              <p className={styles.emptyHint}>Bills you pay and {aide}&rsquo;s visits will show here.</p>
+            </div>
           ) : (
             <ul className={styles.entries}>
               {lines.map((line) => (
@@ -58,6 +62,7 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
                     <StateMark state={line.mark} fabric={line.fabric} />
                   </span>
                   <p className={styles.title}>{line.title}</p>
+                  {line.amount && <p className={styles.amount}>{line.amount}</p>}
                   <p className={styles.detail}>{line.detail}</p>
                 </li>
               ))}

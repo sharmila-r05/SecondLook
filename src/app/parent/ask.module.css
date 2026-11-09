@@ -104,3 +104,12 @@
     transition: none;
   }
 }
+
+/* "Rosa came today" keeps the fabric of the block she tapped, so the tap carries through. */
+.visitAsk .symbol {
+  color: var(--sarah);
+}
+
+.visitAsk .yes {
+  background: var(--sarah);
+}

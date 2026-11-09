@@ -20,7 +20,7 @@ export default async function ConfirmVisit() {
 
   return (
     <Frame role="margaret">
-      <section className={styles.ask} aria-labelledby="ask-heading">
+      <section className={`${styles.ask} ${styles.visitAsk}`} aria-labelledby="ask-heading">
         <House className={styles.symbol} aria-hidden="true" />
         {already ? (
           <>

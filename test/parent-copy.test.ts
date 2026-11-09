@@ -16,8 +16,8 @@ const bill = (state: BillState): ParentEntry => ({
 describe("parentLine", () => {
   it("never shames Margaret or names the mechanism (hard rule 2)", () => {
     for (const state of STATES) {
-      const { title, detail } = parentLine(bill(state));
-      expect(`${title} ${detail}`).not.toMatch(/scam|fraud|hold|authori[sz]|risk|suspicious|blocked|warning|alert/i);
+      const { title, amount, detail } = parentLine(bill(state));
+      expect(`${title} ${amount ?? ""} ${detail}`).not.toMatch(/scam|fraud|hold|authori[sz]|risk|suspicious|blocked|warning|alert/i);
     }
   });
 
@@ -26,7 +26,8 @@ describe("parentLine", () => {
       mark: "waiting",
       stitch: "basting",
       title: "Sent to Sarah to double-check",
-      detail: "$1,500.00 to Tech Support Line · 10:41\u00a0am",
+      amount: "$1,500.00",
+      detail: "to Tech Support Line · 10:41\u00a0am",
     });
   });
 

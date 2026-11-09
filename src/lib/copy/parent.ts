@@ -27,6 +27,8 @@ export interface ParentLine {
   stitch: StitchKind;
   fabric: string;
   title: string;
+  /** Bills only: the amount, ranked with the title on its own line. */
+  amount?: string;
   detail: string;
 }
 
@@ -43,16 +45,17 @@ export function parentLine(entry: ParentEntry): ParentLine {
   const base = { id: entry.id, fabric: MARGARET };
   switch (entry.state) {
     case "processing":
-      return { ...base, mark: "processing", stitch: "sewn", title: `Paying ${entry.payee}`, detail: `${amount} · ${time}` };
+      return { ...base, mark: "processing", stitch: "sewn", title: `Paying ${entry.payee}`, amount, detail: time };
     case "paid":
-      return { ...base, mark: "settled", stitch: "sewn", title: `Paid ${entry.payee}`, detail: `${amount} · ${time}` };
+      return { ...base, mark: "settled", stitch: "sewn", title: `Paid ${entry.payee}`, amount, detail: time };
     case "waiting":
       return {
         ...base,
         mark: "waiting",
         stitch: "basting",
         title: `Sent to ${entry.familyMember} to double-check`,
-        detail: `${amount} to ${entry.payee} · ${time}`,
+        amount,
+        detail: `to ${entry.payee} · ${time}`,
       };
     case "approved":
       return {
@@ -60,7 +63,8 @@ export function parentLine(entry: ParentEntry): ParentLine {
         mark: "settled",
         stitch: "sewn",
         title: `${entry.familyMember} approved it, paid`,
-        detail: `${amount} to ${entry.payee} · ${time}`,
+        amount,
+        detail: `to ${entry.payee} · ${time}`,
       };
     case "declined":
       return {
@@ -68,7 +72,8 @@ export function parentLine(entry: ParentEntry): ParentLine {
         mark: "declined",
         stitch: "pulled",
         title: `${entry.familyMember} said no, nothing was paid`,
-        detail: `${amount} to ${entry.payee}`,
+        amount,
+        detail: `to ${entry.payee}`,
       };
     case "expired":
       return {
@@ -76,7 +81,8 @@ export function parentLine(entry: ParentEntry): ParentLine {
         mark: "declined",
         stitch: "pulled",
         title: "Nothing was paid",
-        detail: `${amount} to ${entry.payee} · no one could check it in time`,
+        amount,
+        detail: `to ${entry.payee} · no one could check it in time`,
       };
   }
 }
