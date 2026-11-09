@@ -87,7 +87,10 @@ export interface LedgerInput {
 /** One fabric per person; Second Look's own plum for what nobody in the family did (a hold timing out). */
 export type Fabric = "margaret" | "sarah" | "tom" | "rosa" | "plum";
 
-/** settled: done. waiting: on a family member. processing: PayPal is finishing it. cancelled: a hold let go. */
+/**
+ * settled: done. waiting: a held bill, on Sarah's or Tom's answer (the only rose basting on the quilt).
+ * processing: on its way, PayPal finishing it or an invoice out with a sibling. cancelled: a hold let go.
+ */
 export type BlockTone = "settled" | "waiting" | "processing" | "cancelled";
 
 export interface StoryLine {
@@ -121,12 +124,14 @@ export interface LedgerBlock {
   /** "Mon 10:41 am" */
   when: string;
   tone: BlockTone;
+  /** One short word beside the amount on the detail panel: "cancelled", "held", "paying", "paid", "sent". */
+  state: string;
   /** One line for the detail panel's headline: "Held and cancelled. The money never left." */
   outcome: string;
   story: StoryLine[];
   /** The rule chips for a payment that was held. */
   why: string[];
-  /** "Orders v2 AUTHORIZE → Payments v2 void" */
+  /** "Orders v2 AUTHORIZE, then Payments v2 void" */
   flow: string;
   steps: LedgerStep[];
 }
@@ -295,9 +300,15 @@ const FLOW: Record<PaymentKind, string> = {
 
 const KIND_ORDER: Record<PaymentKind, number> = { authorization: 0, capture: 1, void: 1, payout: 2, invoice: 3, refund: 4 };
 
+/** "a", "a, then b", "a, b, then c" */
+function inTurn(parts: string[]): string {
+  if (parts.length < 2) return parts.join("");
+  return `${parts.slice(0, -1).join(", ")}, then ${parts.at(-1)}`;
+}
+
 function flowOf(rows: PaymentRow[]): string {
   const kinds = [...new Set(rows.map((r) => r.kind))].sort((a, b) => KIND_ORDER[a] - KIND_ORDER[b]);
-  return kinds.map((k) => FLOW[k]).join(" → ");
+  return inTurn(kinds.map((k) => FLOW[k]));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -336,27 +347,32 @@ function billBlock(bill: BillRow, rows: PaymentRow[], events: EventRow[]): Ledge
   let tone: BlockTone;
   let label: string;
   let outcome: string;
+  let state: string;
   switch (bill.status) {
     case "approved_auto":
       tone = "processing";
+      state = "paying";
       label = "Paying";
       outcome = "PayPal is taking the payment now.";
       story.push(system(`A usual bill to a payee the family knows, so it went straight through.`));
       break;
     case "held":
       tone = "waiting";
+      state = "held";
       label = "Held for a second look";
       outcome = "Held, not taken. Waiting for Sarah or Tom.";
       if (bill.holdExpiresAt) story.push(system(`If nobody answers, the hold cancels itself at ${formatTime(bill.holdExpiresAt)}.`));
       break;
     case "approved_by_family":
       tone = "processing";
+      state = "paying";
       label = `${decider ?? "Family"} said yes${THEN}paying`;
       outcome = `Approved by ${decider ?? "family"}, paying now.`;
       story.push(family(`${decider ?? "Family"} approved it on ${said(decidedAt)}.`));
       break;
     case "paid":
       tone = paidOut ? "settled" : "processing";
+      state = "paid";
       if (decider) {
         label = `${decider} said yes${THEN}paid`;
         outcome = `Approved by ${decider}, paid.`;
@@ -372,13 +388,14 @@ function billBlock(bill: BillRow, rows: PaymentRow[], events: EventRow[]): Ledge
     case "voided":
     case "expired": {
       tone = "cancelled";
+      state = "cancelled";
+      // The block says only what happened to the money; the panel's story says who said no, or that nobody answered.
+      label = "Cancelled · nothing paid";
       const expired = bill.status === "expired" || !decider;
       if (expired) {
         const at = eventFor(events, "request:expired", "requestId", bill.id)?.at ?? bill.holdExpiresAt ?? bill.updatedAt;
-        label = `No answer${THEN}hold cancelled`;
         story.push(system(`Nobody answered by ${formatTime(at)}, so the hold cancelled itself.`));
       } else {
-        label = `${decider} said no${THEN}hold cancelled`;
         story.push(family(`${decider} said no on ${said(decidedAt)}.`));
       }
       const voided = bill.status === "voided" || rows.some((r) => r.kind === "void" && r.status === "VOIDED");
@@ -400,6 +417,7 @@ function billBlock(bill: BillRow, rows: PaymentRow[], events: EventRow[]): Ledge
     at: bill.createdAt.toISOString(),
     when: blockWhen(bill.createdAt),
     tone,
+    state,
     outcome,
     story,
     why: bill.rules.map((r) => r.chip),
@@ -462,6 +480,7 @@ function careBlock(period: CarePeriodRow, rows: PaymentRow[], events: EventRow[]
     at: at.toISOString(),
     when: blockWhen(at),
     tone: settled ? "settled" : "processing",
+    state: settled ? "paid" : "paying",
     outcome: settled ? `${aide} has been paid.` : `Paying ${aide} now.`,
     story,
     why: [],
@@ -493,7 +512,8 @@ function shareBlock(share: ShareRow, period: CarePeriodRow | undefined, rows: Pa
       text: paid ? `${share.member} paid it on PayPal on ${said(paid.at)}.` : `${share.member} paid it on PayPal.`,
     });
   }
-  const tone: BlockTone = share.status === "paid" ? "settled" : share.status === "sent" ? "waiting" : "processing";
+  // An invoice out with a sibling is on its way, not held: only a held bill wears rose basting.
+  const tone: BlockTone = share.status === "paid" ? "settled" : "processing";
   return {
     id: `share:${share.id}`,
     kind: "share",
@@ -506,6 +526,7 @@ function shareBlock(share: ShareRow, period: CarePeriodRow | undefined, rows: Pa
     at: at.toISOString(),
     when: blockWhen(at),
     tone,
+    state: share.status === "paid" ? "paid" : share.status === "sent" ? "sent" : "sending",
     outcome:
       share.status === "paid"
         ? `${share.member} paid their share.`
@@ -514,7 +535,7 @@ function shareBlock(share: ShareRow, period: CarePeriodRow | undefined, rows: Pa
           : "Sending the invoice.",
     story,
     why: [],
-    flow: invoice ? (share.status === "paid" ? "Invoicing v2 create → send → paid" : "Invoicing v2 create → send") : "Invoicing v2",
+    flow: invoice ? (share.status === "paid" ? "Invoicing v2 create, send, then paid" : "Invoicing v2 create, then send") : "Invoicing v2",
     steps: stepsFor(invoice ? [invoice] : [], { invoiceNumber: share.invoiceNumber }),
   };
 }

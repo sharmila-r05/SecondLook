@@ -137,7 +137,7 @@ describe("buildLedger: the quilt", () => {
   it("shows a normal bill as Margaret's, paid, with every PayPal step and its IDs", () => {
     const b = block(ledger, "bill:b-electric");
     expect(b).toMatchObject({ fabric: "margaret", who: "Margaret", tone: "settled", label: "Paid", amount: "$84.00", when: "Mon 9:41 am" });
-    expect(b.flow).toBe("Orders v2 AUTHORIZE → Payments v2 capture → Payouts v1");
+    expect(b.flow).toBe("Orders v2 AUTHORIZE, Payments v2 capture, then Payouts v1");
     expect(b.steps.map((s) => [s.call, s.paypalId, s.requestId])).toEqual([
       ["Orders v2 · create order (AUTHORIZE)", "ORDER-E", "oreq-e"],
       ["Orders v2 · authorize", "AUTH-E", expect.stringMatching(/^req-/)],
@@ -148,18 +148,18 @@ describe("buildLedger: the quilt", () => {
 
   it("bastes a held payment, says why, and opens the panel on it", () => {
     const b = block(ledger, "bill:b-held");
-    expect(b).toMatchObject({ tone: "waiting", label: "Held for a second look", why: ["New payee", "Over $300 limit"] });
+    expect(b).toMatchObject({ tone: "waiting", state: "held", label: "Held for a second look", why: ["New payee", "Over $300 limit"] });
     expect(b.story.at(-1)?.text).toBe("If nobody answers, the hold cancels itself at 10:20 am.");
     expect(ledger.selected).toBe("bill:b-held");
   });
 
   it("keeps a cancelled hold in Margaret's teal, names who said no, and says the money never left", () => {
     const b = block(ledger, "bill:b-denied");
-    expect(b).toMatchObject({ fabric: "margaret", who: "Margaret", tone: "cancelled", label: "Sarah said no — hold cancelled" });
+    expect(b).toMatchObject({ fabric: "margaret", who: "Margaret", tone: "cancelled", state: "cancelled", label: "Cancelled · nothing paid" });
     expect(b.outcome).toBe("Held and cancelled. The money never left.");
     expect(b.story.map((l) => l.who)).toEqual(["Margaret", "Second Look", "Sarah", "Second Look"]);
     expect(b.story[2]?.text).toBe("Sarah said no on Monday at 10:34 am.");
-    expect(b.flow).toBe("Orders v2 AUTHORIZE → Payments v2 void");
+    expect(b.flow).toBe("Orders v2 AUTHORIZE, then Payments v2 void");
   });
 
   it("opens on this week's cancelled hold once nothing is waiting, else on the latest move", () => {
@@ -172,7 +172,7 @@ describe("buildLedger: the quilt", () => {
 
   it("tells a hold that timed out apart from one somebody refused", () => {
     const b = block(ledger, "bill:b-expired");
-    expect(b).toMatchObject({ tone: "cancelled", label: "No answer — hold cancelled" });
+    expect(b).toMatchObject({ tone: "cancelled", label: "Cancelled · nothing paid" });
     expect(b.story.some((l) => l.text === "Nobody answered by 2:10 pm, so the hold cancelled itself.")).toBe(true);
   });
 
@@ -187,9 +187,9 @@ describe("buildLedger: the quilt", () => {
   it("gives Rosa's pay her colour and each share its sibling's, and sews who closed the week onto the row", () => {
     expect(block(ledger, "care:cp-1")).toMatchObject({ fabric: "rosa", title: "Rosa’s pay", label: "Paid for 3 visits", tone: "settled", amount: "$150.00" });
     expect(block(ledger, "care:cp-1").steps[0]?.ours).toEqual({ label: "sender_batch_id", value: "sl-care-cp-1" });
-    expect(block(ledger, "share:s-sarah")).toMatchObject({ fabric: "sarah", label: "Paid", tone: "settled" });
+    expect(block(ledger, "share:s-sarah")).toMatchObject({ fabric: "sarah", label: "Paid", tone: "settled", flow: "Invoicing v2 create, send, then paid" });
     expect(block(ledger, "share:s-sarah").story.at(-1)?.text).toBe("Sarah paid it on PayPal on Monday at 9:30 am.");
-    expect(block(ledger, "share:s-tom")).toMatchObject({ fabric: "tom", label: "Invoice sent", tone: "waiting" });
+    expect(block(ledger, "share:s-tom")).toMatchObject({ fabric: "tom", label: "Invoice sent", tone: "processing", state: "sent" });
     // Tom's invoice row has no share id (before the share_id column): it's matched by its invoice ID.
     expect(block(ledger, "share:s-tom").steps[0]).toMatchObject({ paypalId: "INV-T", status: "UNPAID", ours: { label: "Invoice number", value: "SL-CP1-TOM" } });
     expect(ledger.weeks[0]?.closedBy).toEqual({ who: "Sarah", fabric: "sarah", when: "Mon 9:00 am" });
