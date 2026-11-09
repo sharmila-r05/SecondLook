@@ -5,7 +5,7 @@ import type postgres from "postgres";
 import type { SecondLook } from "@/lib/copy/family";
 import type { BillState, ParentEntry } from "@/lib/copy/parent";
 import { db } from "@/lib/db";
-import { type SeedOptions, seedFamily } from "@/lib/demo/seed";
+import { seedFamily } from "@/lib/demo/seed";
 import { assertCents } from "@/lib/money";
 import type { RuleHit } from "@/lib/risk";
 import type { FamilySettings, SetupStep } from "@/lib/settings";
@@ -97,20 +97,34 @@ export async function findFamily(sessionId: string): Promise<Family | null> {
 }
 
 /**
- * Reset (brief §4): this session's rows only, then a fresh family of the same kind. A family someone set up starts
- * its setup over, with the same person setting it up; the ready-made one is seeded again. Other visitors are untouched.
+ * Reset (brief §4): this session's rows only; other visitors are untouched. The ready-made family is seeded again. A
+ * family someone set up keeps its setup (people, Mom's bills, the rules, care costs, invites, Mom's agreement and her
+ * PayPal) and loses only what happened since: payments, visits, closed weeks and new payees.
  */
 export async function resetFamily(sessionId: string): Promise<void> {
   await db().begin(async (tx) => {
     await lockSession(tx, sessionId);
-    const [old] = await tx<{ origin: FamilySettings["origin"]; organizer: string | null }[]>`
-      select f.origin, m.name as organizer from families f left join members m on m.id = f.organizer_member_id
-      where f.demo_session_id = ${sessionId} limit 1`;
+    const [old] = await tx<{ id: string; origin: FamilySettings["origin"] }[]>`
+      select id, origin from families where demo_session_id = ${sessionId} limit 1`;
+    if (old?.origin === "setup") {
+      await clearActivity(tx, old.id);
+      return;
+    }
     await tx`delete from families where demo_session_id = ${sessionId}`;
-    const options: SeedOptions =
-      old?.origin === "setup" ? { origin: "setup", organizer: old.organizer === "Tom" ? "Tom" : "Sarah" } : { origin: "ready" };
-    await seedFamily(tx, sessionId, options);
+    await seedFamily(tx, sessionId);
   });
+}
+
+/** Everything a family did, as opposed to how it was set up. */
+async function clearActivity(tx: postgres.TransactionSql, familyId: string) {
+  await tx`delete from payments where family_id = ${familyId}`;
+  await tx`delete from care_periods where family_id = ${familyId}`;
+  await tx`delete from payment_requests where family_id = ${familyId}`;
+  await tx`delete from visits where family_id = ${familyId}`;
+  await tx`delete from payees where family_id = ${familyId} and not known`;
+  await tx`
+    delete from events where family_id = ${familyId}
+      and type not like 'family:%' and type not in ('member:joined', 'parent:agreed', 'paypal:vaulted')`;
 }
 
 /**
