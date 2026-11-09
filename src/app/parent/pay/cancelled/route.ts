@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { abandonBill } from "@/lib/bills";
 import { ensureFamily } from "@/lib/family";
+import { seeOther } from "@/lib/redirect";
 import { getSessionId } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -12,5 +12,5 @@ export async function GET(request: Request) {
   if (requestId && /^[0-9a-f-]{36}$/i.test(requestId)) {
     await abandonBill(await ensureFamily(await getSessionId()), requestId);
   }
-  return NextResponse.redirect(new URL("/parent", url), 303);
+  return seeOther("/parent");
 }

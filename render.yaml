@@ -1,0 +1,53 @@
+# Render Blueprint: the web app and its Postgres database. Secrets are `sync: false`: Render asks for them once in the
+# dashboard and they never enter git. The web service is always on and the database is a paid plan, so the demo
+# stays up (and its data stays) through judging.
+services:
+  - type: web
+    runtime: node
+    name: secondlook
+    region: oregon
+    plan: 0.5c-512mb            # always on ($7/mo; free web services sleep)
+    buildCommand: npm ci && npm run build
+    preDeployCommand: npm run db:migrate
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 24.22.1
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: DATABASE_URL
+        fromDatabase:
+          name: secondlook-db
+          property: connectionString
+      - key: LLM_MODEL
+        value: claude-sonnet-5-5
+      - key: HOLD_TIMEOUT_MINUTES
+        value: "10"
+      - key: SESSION_LLM_CALLS_CAP
+        value: "20"
+      - key: DAILY_LLM_CALLS_CAP
+        value: "200"
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+
+databases:
+  - name: secondlook-db
+    region: oregon
+    plan: 0.1c-256mb            # $6/mo; free Postgres is deleted after 30 days
+    diskSizeGB: 1
+    postgresMajorVersion: "18"
+    ipAllowList: []

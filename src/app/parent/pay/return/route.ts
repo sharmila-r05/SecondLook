@@ -1,9 +1,10 @@
-import { after, NextResponse } from "next/server";
+import { after } from "next/server";
 import { improveHeldNote } from "@/lib/ai-note";
 import { finishApproval } from "@/lib/bills";
 import { ensureFamily } from "@/lib/family";
 import { templateNote } from "@/lib/note";
 import { PayPalError } from "@/lib/paypal";
+import { seeOther } from "@/lib/redirect";
 import { getSessionId } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ const HOLD_MINUTES = Number(process.env.HOLD_TIMEOUT_MINUTES ?? 10) || 10;
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const orderId = url.searchParams.get("token");
-  if (!orderId) return NextResponse.redirect(new URL("/parent", url), 303);
+  if (!orderId) return seeOther("/parent");
 
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
@@ -22,10 +23,10 @@ export async function GET(request: Request) {
     const bill = await finishApproval(family, sessionId, orderId, HOLD_MINUTES, async (held) => templateNote(held));
     // The template note is already saved; Claude's replaces it after Margaret has her answer.
     if (bill.status === "held") after(() => improveHeldNote(family, sessionId, bill.id));
-    return NextResponse.redirect(new URL("/parent", url), 303);
+    return seeOther("/parent");
   } catch (err) {
     // Log PayPal's debug_id, never bodies or emails.
     console.error("finishing a bill failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);
-    return NextResponse.redirect(new URL("/parent?paypal=problem", url), 303);
+    return seeOther("/parent?paypal=problem");
   }
 }

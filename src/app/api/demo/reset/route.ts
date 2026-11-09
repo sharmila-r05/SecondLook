@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { resetFamily } from "@/lib/family";
+import { seeOther } from "@/lib/redirect";
 import { getSessionId } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -8,12 +8,16 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   await resetFamily(await getSessionId());
 
-  const fallback = new URL("/parent", request.url);
+  // Only the referer's path is kept, so the redirect stays on this site whatever host the proxy reports.
+  let back = "/parent";
   const referer = request.headers.get("referer");
-  let back = fallback;
   if (referer) {
-    const url = new URL(referer);
-    if (url.origin === fallback.origin) back = new URL(url.pathname + url.search, request.url);
+    try {
+      const url = new URL(referer);
+      back = url.pathname + url.search;
+    } catch {
+      // keep /parent
+    }
   }
-  return NextResponse.redirect(back, 303);
+  return seeOther(back);
 }

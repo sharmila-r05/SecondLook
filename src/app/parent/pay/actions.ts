@@ -11,6 +11,7 @@ import { matchPayee, parseRequest } from "@/lib/parse";
 import { evaluate } from "@/lib/risk";
 import { getSessionId } from "@/lib/session";
 import { localDate, PARENT_TIME_ZONE } from "@/lib/time";
+import { publicOrigin } from "@/lib/redirect";
 
 /** Anything above this is surely a mishearing; she's asked to say it again. */
 const MAX_REQUEST_CENTS = 1_000_000;
@@ -115,6 +116,6 @@ export async function confirmRequest(input: { said: string; payeeId: string | nu
   });
 
   const h = await headers();
-  const origin = process.env.APP_BASE_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+  const origin = publicOrigin(h);
   redirect(await startBill(family, sessionId, requestId, origin));
 }
