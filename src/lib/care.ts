@@ -240,6 +240,31 @@ export async function finishClosing(family: Family, sessionId: string, periodId:
 const PAID = new Set(["PAID", "MARKED_AS_PAID"]);
 
 /**
+ * Records PayPal's latest status for an invoice; when it's paid, the share is paid and the ledger gets one
+ * `paypal:invoice_paid` event (the conditional update makes a poll and a webhook arriving together count once).
+ * Returns true when this call moved the share to paid.
+ */
+export async function markInvoicePaid(invoiceId: string, status: string): Promise<boolean> {
+  const sql = db();
+  await sql`update payments set status = ${status} where kind = 'invoice' and paypal_invoice_id = ${invoiceId}`;
+  if (!PAID.has(status)) return false;
+  const [share] = await sql<{ id: string; care_period_id: string; amount_cents: string; name: string; family_id: string; demo_session_id: string }[]>`
+    update shares s set status = 'paid', checked_at = now()
+    from members m, care_periods cp
+    where s.paypal_invoice_id = ${invoiceId} and s.status = 'sent' and m.id = s.member_id and cp.id = s.care_period_id
+    returning s.id, s.care_period_id, s.amount_cents, m.name, cp.family_id, cp.demo_session_id`;
+  if (!share) return false;
+  await recordEvent(sql, { id: share.family_id }, share.demo_session_id, "paypal:invoice_paid", {
+    carePeriodId: share.care_period_id,
+    shareId: share.id,
+    to: share.name,
+    amountCents: Number(share.amount_cents),
+    invoiceId,
+  });
+  return true;
+}
+
+/**
  * On each look: finishes any close that stopped halfway, and asks PayPal (at most every 10 seconds per invoice) whether
  * a sent invoice has been paid. Never throws: the screen shows what's known.
  */
@@ -257,20 +282,7 @@ export async function refreshCare(family: Family, sessionId: string): Promise<vo
         and (s.checked_at is null or s.checked_at < now() - interval '10 seconds')`;
     for (const share of due) {
       const latest = await getInvoice(share.paypal_invoice_id);
-      const paid = PAID.has(latest.status);
-      const [moved] = await sql`
-        update shares set checked_at = now(), status = ${paid ? "paid" : "sent"}
-        where id = ${share.id} and status = 'sent' returning id`;
-      await sql`update payments set status = ${latest.status} where share_id = ${share.id}`;
-      if (paid && moved) {
-        await recordEvent(sql, family, sessionId, "paypal:invoice_paid", {
-          carePeriodId: share.care_period_id,
-          shareId: share.id,
-          to: share.name,
-          amountCents: Number(share.amount_cents),
-          invoiceId: share.paypal_invoice_id,
-        });
-      }
+      if (!(await markInvoicePaid(share.paypal_invoice_id, latest.status))) await sql`update shares set checked_at = now() where id = ${share.id}`;
     }
   } catch (err) {
     console.error("refreshing the care week failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);

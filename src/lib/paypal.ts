@@ -404,3 +404,25 @@ export async function getInvoice(invoiceId: string): Promise<InvoiceState> {
   const { body } = await rest<InvoiceBody>("GET", `/v2/invoicing/invoices/${encodeURIComponent(invoiceId)}`);
   return invoiceState(body, invoiceId);
 }
+
+// ---- Webhooks ----
+
+/** Asks PayPal whether a webhook delivery is genuine (the postback check). True only for SUCCESS. */
+export async function verifyWebhookSignature(input: { headers: Headers; event: unknown; webhookId: string }): Promise<boolean> {
+  const h = (name: string) => input.headers.get(name) ?? "";
+  const transmissionId = h("paypal-transmission-id");
+  if (!transmissionId) return false;
+  const { body } = await rest<{ verification_status?: string }>("POST", "/v1/notifications/verify-webhook-signature", {
+    requestId: `verify-${transmissionId}`.slice(0, 38),
+    body: {
+      auth_algo: h("paypal-auth-algo"),
+      cert_url: h("paypal-cert-url"),
+      transmission_id: transmissionId,
+      transmission_sig: h("paypal-transmission-sig"),
+      transmission_time: h("paypal-transmission-time"),
+      webhook_id: input.webhookId,
+      webhook_event: input.event,
+    },
+  });
+  return body.verification_status === "SUCCESS";
+}
