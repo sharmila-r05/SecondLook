@@ -1,0 +1,1024 @@
+/* Setting up Mom's family: the organizer's walk through it (WCAG 2.2 AA). Phone-first, one column on the pale ground.
+   The steps are a row of quilt blocks sewn into the plum border, in the organizer's fabric as each step is done; on a
+   wide desktop they stand beside the column, as the family screen's QR code does. */
+
+/* Each person's fabric, and the ink that reads on it (near-black on Tom's ochre, white on the rest). Set on anything
+   that wears one, and inherited by what's inside. */
+.fabric {
+  --fabric: var(--margaret);
+  --on-fabric: var(--paper);
+}
+
+.fabric[data-fabric="sarah"] {
+  --fabric: var(--sarah);
+}
+
+.fabric[data-fabric="tom"] {
+  --fabric: var(--tom);
+  --on-fabric: var(--ink);
+}
+
+.fabric[data-fabric="rosa"] {
+  --fabric: var(--rosa);
+}
+
+/* ---- Stage ------------------------------------------------------------------------------------------------ */
+
+.stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 26px 16px 32px;
+  border-radius: var(--radius-block);
+  background: var(--ground);
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+
+.intro {
+  display: grid;
+  gap: 10px;
+}
+
+.heading {
+  font-size: 1.875rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.lead {
+  max-width: 58ch;
+  text-wrap: pretty;
+}
+
+.form {
+  display: grid;
+  gap: 30px;
+  margin: 0;
+}
+
+.section {
+  display: grid;
+  gap: 26px;
+}
+
+.subheading {
+  padding-top: 26px;
+  border-top: 2px dashed rgb(26 23 32 / 0.22);
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.help {
+  max-width: 60ch;
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+  text-wrap: pretty;
+}
+
+/* ---- The steps, as quilt blocks in the plum border -------------------------------------------------------- */
+
+.progress {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.progressHead {
+  display: none;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps > li {
+  display: grid;
+}
+
+.step {
+  position: relative;
+  display: grid;
+  align-content: end;
+  min-height: 54px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+a.step:hover {
+  filter: brightness(1.1);
+}
+
+.step[data-state="sewn"] {
+  background: var(--fabric);
+  color: var(--on-fabric);
+}
+
+.step[data-state="open"] {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.step[data-state="unsewn"] {
+  border: 2px dashed rgb(237 230 238 / 0.45);
+  color: var(--plum-100);
+}
+
+/* Where the organizer is now: a ring in the border's light thread, as a selected ledger block wears one. */
+.step[aria-current="step"] {
+  outline: 3px solid var(--plum-100);
+  outline-offset: 3px;
+}
+
+.stepLabel,
+.stepSummary {
+  position: relative;
+}
+
+.stepSummary {
+  display: none;
+}
+
+.stepTick {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 18px;
+  height: 18px;
+}
+
+.thread {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.thread rect {
+  fill: none;
+  stroke-linecap: round;
+}
+
+/* Sewn: a fine running stitch on the fabric. Open: the organizer's thread basted round a step still to save. */
+.step[data-state="sewn"] .thread rect {
+  stroke: color-mix(in srgb, var(--on-fabric) 55%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+}
+
+.step[data-state="open"] .thread rect {
+  stroke: var(--fabric);
+  stroke-width: 2.5;
+  stroke-dasharray: 11 7;
+}
+
+/* ---- Choices: a row of small solid patches, the chosen one sewn in plum ------------------------------------- */
+
+.group {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: 2px;
+  font-size: 1.1875rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+/* One even row of patches per question, however many answers it has (set as --count). */
+.pills {
+  display: grid;
+  grid-template-columns: repeat(var(--count, 4), minmax(0, 1fr));
+  gap: 6px;
+}
+
+.pills .option {
+  min-width: 0;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 62px;
+  min-height: 50px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px rgb(26 23 32 / 0.34);
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.option:hover {
+  background: var(--ground-raised);
+}
+
+.radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.option:has(.radio:focus-visible) {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 7px var(--focus-ring);
+}
+
+.option:has(.radio:checked) {
+  background: var(--plum-900);
+  box-shadow: none;
+  color: var(--paper);
+}
+
+.tick {
+  display: none;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.option:has(.radio:checked) .tick {
+  display: block;
+}
+
+/* Two choices with a sentence each ("Both of us", "Just me"): full-width rows. */
+.rowsChoice {
+  display: grid;
+  gap: 8px;
+}
+
+.rowsChoice .option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22px;
+  justify-content: stretch;
+  gap: 2px 12px;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.rowsChoice .tick {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  width: 22px;
+  height: 22px;
+}
+
+.optionTitle {
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+.optionDetail {
+  grid-column: 1;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.warning {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.warning svg {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  color: var(--plum-700);
+}
+
+/* ---- The words that always get a second look (read only) ------------------------------------------------------ */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--ground-raised);
+  box-shadow: inset 0 0 0 1px rgb(26 23 32 / 0.28);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ---- Money typed in dollars ------------------------------------------------------------------------------- */
+
+.moneyField {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.moneyBox {
+  display: inline-flex;
+  align-items: center;
+  width: 8em;
+  min-height: 52px;
+  padding: 0 4px 0 14px;
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 2px var(--ink-muted);
+  font-size: 1.1875rem;
+  font-weight: 800;
+}
+
+.moneyBox:focus-within {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow:
+    inset 0 0 0 2px var(--ink),
+    0 0 0 7px var(--focus-ring);
+}
+
+.moneyBox input {
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  padding: 0 8px 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.moneyBox:has(input[aria-invalid="true"]) {
+  box-shadow: inset 0 0 0 3px var(--ink);
+}
+
+.moneyBox:has(input:disabled) {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px rgb(26 23 32 / 0.22);
+  color: var(--ink-muted);
+}
+
+/* ---- Mom's bills ---------------------------------------------------------------------------------------------- */
+
+.bills {
+  display: grid;
+  gap: 10px;
+  container-type: inline-size;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bill {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--radius-row);
+  background: var(--ground-raised);
+  box-shadow: inset 0 0 0 1px rgb(26 23 32 / 0.12);
+}
+
+.bill[data-chosen] {
+  background: var(--paper);
+  box-shadow: none;
+}
+
+.billPick {
+  position: relative;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  cursor: pointer;
+}
+
+.checkbox {
+  display: grid;
+  place-content: center;
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  border: 2px solid var(--ink-muted);
+  border-radius: 7px;
+  background: var(--paper);
+  appearance: none;
+  cursor: pointer;
+}
+
+.checkbox::before {
+  width: 14px;
+  height: 8px;
+  border-bottom: 3px solid var(--paper);
+  border-left: 3px solid var(--paper);
+  content: "";
+  opacity: 0;
+  transform: translate(0, -2px) rotate(-45deg);
+}
+
+.checkbox:checked {
+  border-color: var(--margaret);
+  background: var(--margaret);
+}
+
+.checkbox:checked::before {
+  opacity: 1;
+}
+
+.billText {
+  display: grid;
+  gap: 2px;
+}
+
+.billName {
+  font-size: 1.1875rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.billWhat {
+  color: var(--ink-muted);
+}
+
+.billAmount {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding-left: 44px;
+}
+
+.amountLabel {
+  font-weight: 700;
+}
+
+@container (min-width: 470px) {
+  .bill {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .billAmount {
+    padding-left: 0;
+  }
+}
+
+/* ---- Care: the split, as a strip of the two siblings' fabrics ---------------------------------------------- */
+
+.splitPills {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.pills .splitOption {
+  padding: 0;
+}
+
+.share {
+  display: grid;
+  gap: 4px;
+  min-width: 70px;
+  padding: 8px 10px 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.shareRatio {
+  font-weight: 800;
+}
+
+.shareBar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--sarah) var(--sarah-share), var(--tom) var(--sarah-share));
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.7);
+}
+
+.split {
+  display: flex;
+  gap: 4px;
+  min-height: 64px;
+}
+
+.splitPart {
+  position: relative;
+  display: grid;
+  flex: 1 1 0;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--fabric);
+  color: var(--on-fabric);
+  font-size: 0.9375rem;
+  line-height: 1.25;
+  transition: flex-grow 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.splitWho {
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+.splitPart .thread rect {
+  stroke: color-mix(in srgb, var(--on-fabric) 55%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+}
+
+/* ---- "Who are you?" ------------------------------------------------------------------------------------------- */
+
+.who {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.whoBlock {
+  position: relative;
+  display: grid;
+  align-content: end;
+  gap: 4px;
+  min-height: 176px;
+  padding: 18px 18px 20px;
+  border: 0;
+  border-radius: var(--radius-block);
+  background: var(--fabric);
+  color: var(--on-fabric);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    filter 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.whoBlock:hover {
+  filter: brightness(1.1);
+}
+
+.whoBlock:disabled {
+  cursor: progress;
+}
+
+.whoBlock:disabled:not([aria-busy]) {
+  opacity: 0.45;
+}
+
+.whoBlock .thread rect {
+  stroke: color-mix(in srgb, var(--on-fabric) 55%, transparent);
+  stroke-width: 2;
+  stroke-dasharray: 7 6;
+}
+
+.whoName {
+  position: relative;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.whoRole {
+  position: relative;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.cast {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: var(--radius-row);
+  background: var(--ground-raised);
+}
+
+.castTitle {
+  font-size: 1.1875rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.castList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.castItem {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-content: start;
+  align-items: center;
+  gap: 0 10px;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+}
+
+.castItem strong {
+  font-size: 1.0625rem;
+}
+
+.castItem span:last-child {
+  grid-column: 2;
+  color: var(--ink-muted);
+}
+
+.swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--fabric);
+}
+
+/* ---- Saving, errors, back ------------------------------------------------------------------------------------ */
+
+.actions {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--plum-900);
+  color: var(--paper);
+  font-size: 1.125rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.primary:hover {
+  filter: brightness(1.25);
+}
+
+.primary:disabled {
+  cursor: progress;
+  filter: none;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.quietForm {
+  margin: 0;
+}
+
+.textButton {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.textButton:disabled {
+  color: var(--ink-muted);
+  cursor: progress;
+}
+
+.note {
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* An error names the problem beside the form: calm paper with a firm edge, never the rose kept for held payments. */
+.error {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--radius-row);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 2px var(--ink);
+  font-weight: 700;
+}
+
+.error svg {
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  color: var(--plum-900);
+}
+
+/* ---- Invites -------------------------------------------------------------------------------------------------- */
+
+.invites {
+  display: grid;
+  gap: 14px;
+}
+
+.deskOnly {
+  display: none;
+}
+
+.alerts {
+  display: grid;
+  gap: 8px;
+}
+
+.alertsHeading {
+  font-size: 1.1875rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.demoSkip {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin: 0;
+  padding: 16px;
+  border: 2px dashed var(--stitch);
+  border-radius: var(--radius-row);
+}
+
+.demoSkip p {
+  font-size: 0.9375rem;
+}
+
+.demoSkip .secondary {
+  width: 100%;
+  padding: 8px 14px;
+  text-wrap: balance;
+}
+
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 2px solid var(--plum-900);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--plum-900);
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.secondary:hover {
+  filter: brightness(0.96);
+}
+
+.secondary:disabled {
+  cursor: progress;
+  color: var(--ink-muted);
+}
+
+/* The bar's own buttons on the setup screens, beside the brand. */
+.barButton {
+  cursor: pointer;
+}
+
+/* ---- Wider screens -------------------------------------------------------------------------------------------- */
+
+@media (min-width: 760px) {
+  .panel {
+    gap: 32px;
+    padding: 38px 44px 44px;
+  }
+
+  .heading {
+    font-size: 2.25rem;
+  }
+
+  .lead {
+    font-size: 1.125rem;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: row-reverse;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .actions > .error {
+    flex-basis: 100%;
+  }
+
+  .primary {
+    width: auto;
+    min-width: 280px;
+  }
+
+  .note {
+    flex-basis: 100%;
+    text-align: left;
+  }
+
+  .whoBlock {
+    min-height: 220px;
+    padding: 22px 24px 24px;
+  }
+
+  .whoName {
+    font-size: 2.5rem;
+  }
+
+  .castList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 32px;
+  }
+
+}
+
+@media (min-width: 760px) and (hover: hover) {
+  .deskOnly {
+    display: block;
+  }
+}
+
+/* A wide desktop: the steps stand beside the column as a column of blocks with what was chosen in each. */
+@media (min-width: 1100px) {
+  .stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 620px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .stage > .panel {
+    grid-column: 2;
+    align-self: stretch;
+  }
+
+  .stage > .wide {
+    grid-column: 2 / 4;
+    max-width: 960px;
+    margin: 0;
+  }
+
+  .wide .invites {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .wide .alerts {
+    max-width: 620px;
+  }
+
+  .progress {
+    position: sticky;
+    top: 24px;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+    max-width: 280px;
+  }
+
+  .progressHead {
+    display: grid;
+    gap: 2px;
+    margin-bottom: 14px;
+    color: var(--plum-100);
+  }
+
+  .progressTitle {
+    color: var(--paper);
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .step {
+    align-content: start;
+    gap: 4px;
+    min-height: 96px;
+    padding: 16px 40px 16px 16px;
+    font-size: 1.125rem;
+  }
+
+  .stepSummary {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .step[data-state="sewn"] .stepSummary {
+    opacity: 0.92;
+  }
+
+  .stepTick {
+    top: 14px;
+    right: 14px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step,
+  .option,
+  .splitPart,
+  .whoBlock,
+  .primary,
+  .secondary {
+    transition: none;
+  }
+}
