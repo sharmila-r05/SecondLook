@@ -2,15 +2,20 @@
 // approved it on PayPal. The hold is real (a card-funded AUTHORIZE order in the sandbox, which needs no buyer login),
 // so Deny and Approve on the family screen exercise real voids, captures and payouts.
 // Run: node --env-file=.env scripts/dev/hold-for-test.mjs [family id]   (default: the most recently created family)
+// With --via-return the request is left "new", as if Margaret were just back from PayPal, and the script prints the
+// return URL: opening it in that family's browser finishes the bill through the app (the hold, then the family's alert).
 
 import { randomUUID } from "node:crypto";
 import postgres from "postgres";
 import { cardOrder, firstAuthorization, newRequestId, startGate } from "../sandbox/lib.mjs";
 
+const viaReturn = process.argv.includes("--via-return");
+const familyId = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
+
 const sql = postgres(process.env.DATABASE_URL, { max: 1 });
 try {
-  const [family] = process.argv[2]
-    ? await sql`select id, demo_session_id from families where id = ${process.argv[2]}`
+  const [family] = familyId
+    ? await sql`select id, demo_session_id from families where id = ${familyId}`
     : await sql`select id, demo_session_id from families order by created_at desc limit 1`;
   if (!family) throw new Error("no family found");
 
@@ -35,13 +40,18 @@ try {
     const [request] = await tx`
       insert into payment_requests (demo_session_id, family_id, payee_id, amount_cents, request_text, status, triggered_rules, risk_note, hold_expires_at)
       values (${family.demo_session_id}, ${family.id}, ${payee.id}, ${amountCents}, 'Pay $1,500 to tech support, they said my computer is hacked',
-              'held', ${tx.json(rules)}, ${note}, now() + interval '10 minutes')
+              ${viaReturn ? "new" : "held"}, ${tx.json(rules)}, ${viaReturn ? null : note},
+              ${viaReturn ? null : new Date(Date.now() + 10 * 60_000)})
       returning id`;
     await tx`
       insert into payments (demo_session_id, family_id, payment_request_id, kind, paypal_request_id, order_request_id, paypal_order_id,
                             paypal_authorization_id, amount_cents, status)
       values (${family.demo_session_id}, ${family.id}, ${request.id}, 'authorization', ${randomUUID()}, ${orderRequestId}, ${order.body.id},
               ${authorization.id}, ${amountCents}, ${authorization.status})`;
+    if (viaReturn) {
+      console.log(`request ${request.id} in family ${family.id} is ready: open /parent/pay/return?token=${order.body.id}`);
+      return;
+    }
     await tx`insert into events (demo_session_id, family_id, type, payload) values (${family.demo_session_id}, ${family.id}, 'request:held', ${tx.json({ requestId: request.id, note })})`;
     console.log(`held request ${request.id} in family ${family.id} (authorization ${authorization.id})`);
   });
