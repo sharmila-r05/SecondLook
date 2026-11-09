@@ -1,18 +1,64 @@
-import { House, Mic } from "lucide-react";
+import { Clock, House, Mic, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 import { after } from "next/server";
 import { Frame } from "@/components/quilt/Frame";
 import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
 import { sweepExpiredHolds, sweepOtherExpiredHolds } from "@/lib/bills";
-import { CONNECT_COPY, orderForParent, parentLine } from "@/lib/copy/parent";
-import { ensureFamily, getParentDay, memberNamed } from "@/lib/family";
+import { type AgreementCopy, agreementCopy, CONNECT_COPY, orderForParent, parentLine } from "@/lib/copy/parent";
+import { ensureFamily, type Family, getParentDay, memberNamed, organizerOf } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
 import { formatDay } from "@/lib/time";
 import { savedPayPal } from "@/lib/vault";
-import { connectPayPal } from "./actions";
+import { agreeToSecondLook, connectPayPal } from "./actions";
+import { AgreeButton } from "./AgreeButton";
 import { ConnectButton } from "./ConnectButton";
 import styles from "./parent.module.css";
+
+const LINE_ICONS: Record<AgreementCopy["lines"][number]["key"], typeof Wallet> = { bills: Wallet, family: Users, wait: Clock };
+
+/**
+ * A family just set up: before anything else, who set Second Look up with Margaret, what it does in three plain
+ * sentences, and one large yes in place of her two action blocks. Pay and "Rosa came today" open once she agrees.
+ */
+function Agreement({ family }: { family: Family }) {
+  const organizer = organizerOf(family);
+  const copy = agreementCopy({
+    organizer: organizer?.name ?? "Your family",
+    sibling: family.members.find((m) => m.role === "child" && m.id !== organizer?.id)?.name ?? null,
+    ask: family.settings.ask,
+    holdMinutes: family.settings.holdMinutes,
+  });
+  return (
+    <Frame role="margaret">
+      <div className={styles.layout} data-agree="">
+        <section className={styles.today} aria-labelledby="agree-heading">
+          <Stitch kind="light" />
+          <h1 id="agree-heading" className={styles.heading}>
+            {copy.heading}
+          </h1>
+          <ul className={styles.entries}>
+            {copy.lines.map((line) => {
+              const Icon = LINE_ICONS[line.key];
+              return (
+                <li key={line.key} className={`${styles.entry} ${styles.statement}`}>
+                  <Stitch kind="sewn" />
+                  <span className={styles.mark}>
+                    <Icon className={styles.lineIcon} aria-hidden="true" />
+                  </span>
+                  <p>{line.text}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+        <form action={agreeToSecondLook} className={styles.agree}>
+          <AgreeButton label={copy.button} pending={copy.pending} />
+        </form>
+      </div>
+    </Frame>
+  );
+}
 
 const NOTICES: Record<string, string> = {
   problem: "PayPal didn’t finish that payment, so nothing was paid. You can try again.",
@@ -29,6 +75,7 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
   const family = await ensureFamily(sessionId);
   await sweepExpiredHolds(family, sessionId);
   after(() => sweepOtherExpiredHolds());
+  if (!family.settings.parentAgreedAt) return <Agreement family={family} />;
   const { paypal } = await searchParams;
   const notice = paypal ? NOTICES[paypal] : undefined;
   const lines = orderForParent(await getParentDay(family, now)).map(parentLine);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type BillState, orderForParent, type ParentEntry, parentLine } from "@/lib/copy/parent";
+import { agreementCopy, type BillState, orderForParent, type ParentEntry, parentLine } from "@/lib/copy/parent";
 
 const at = new Date("2026-11-06T15:41:00Z"); // 10:41 am in Ohio
 const STATES: BillState[] = ["processing", "paid", "waiting", "approved", "declined", "expired"];
@@ -64,6 +64,46 @@ describe("templateNote", () => {
         ],
       }),
     ).toBe("Microsoft Support isn’t on the family’s list. She mentioned “hacked”.");
+  });
+});
+
+describe("agreementCopy", () => {
+  const both = agreementCopy({ organizer: "Sarah", sibling: "Tom", ask: "everyone", holdMinutes: 10 });
+  const one = agreementCopy({ organizer: "Tom", sibling: "Sarah", ask: "organizer", holdMinutes: 60 });
+  const texts = (copy: ReturnType<typeof agreementCopy>) => [copy.heading, ...copy.lines.map((l) => l.text), copy.button, copy.pending];
+
+  it("never shames Margaret or names the mechanism (hard rule 2)", () => {
+    for (const holdMinutes of [10, 60, 1440]) {
+      for (const ask of ["everyone", "organizer"] as const) {
+        for (const text of texts(agreementCopy({ organizer: "Sarah", sibling: "Tom", ask, holdMinutes }))) {
+          expect(text).not.toMatch(/scam|fraud|hold|authori[sz]|risk|suspicious|blocked|warning|alert|vault|token|agreement|approv/i);
+        }
+      }
+    }
+  });
+
+  it("names who set it up with her, and that her bills are still hers", () => {
+    expect(both.heading).toBe("Sarah set up Second Look with you");
+    expect(one.heading).toBe("Tom set up Second Look with you");
+    expect(both.lines[0]).toEqual({ key: "bills", text: "Your bills are still yours to pay." });
+  });
+
+  it("says who takes the second look: both children, or just the one who set it up", () => {
+    expect(both.lines[1]?.text).toBe("When a payment looks unusual, Sarah or Tom takes a second look before any money moves.");
+    expect(one.lines[1]?.text).toBe("When a payment looks unusual, Tom takes a second look before any money moves.");
+  });
+
+  it("says how long a payment waits, and that nothing is paid if no one answers", () => {
+    expect(both.lines[2]?.text).toBe("If no one answers within 10 minutes, nothing is paid.");
+    expect(one.lines[2]?.text).toBe("If Tom doesn’t answer within an hour, nothing is paid.");
+    expect(agreementCopy({ organizer: "Sarah", sibling: null, ask: "everyone", holdMinutes: 1440 }).lines[2]?.text).toBe(
+      "If Sarah doesn’t answer within a day, nothing is paid.",
+    );
+  });
+
+  it("asks for one plain yes", () => {
+    expect(both.button).toBe("That sounds good");
+    expect(both.lines).toHaveLength(3);
   });
 });
 

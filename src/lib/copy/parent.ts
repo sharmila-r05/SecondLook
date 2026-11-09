@@ -4,6 +4,7 @@
 import type { MarkState } from "@/components/quilt/StateMark";
 import type { StitchKind } from "@/components/quilt/Stitch";
 import { formatUsd } from "@/lib/money";
+import { holdWords } from "@/lib/settings";
 import { formatTime } from "@/lib/time";
 
 export type BillState = "processing" | "paid" | "waiting" | "approved" | "declined" | "expired";
@@ -105,3 +106,36 @@ export const CONNECT_COPY = {
   connected: "Your PayPal is connected. Now “Yes, pay it” is all it takes.",
   notConnected: "Your PayPal isn’t connected, so nothing changed. You can connect it any time.",
 } as const;
+
+export interface AgreementCopy {
+  heading: string;
+  /** What Second Look does, one plain sentence each: her bills, the second look, the wait. */
+  lines: { key: "bills" | "family" | "wait"; text: string }[];
+  button: string;
+  pending: string;
+}
+
+/**
+ * The first thing Margaret's screen shows in a family just set up: who set it up with her, what it does, and one yes.
+ * It names who takes the second look (both children, or just the one who set it up) and how long a payment waits.
+ */
+export function agreementCopy(input: { organizer: string; sibling: string | null; ask: "everyone" | "organizer"; holdMinutes: number }): AgreementCopy {
+  const both = input.ask === "everyone" && input.sibling !== null;
+  const wait = holdWords(input.holdMinutes);
+  return {
+    heading: `${input.organizer} set up Second Look with you`,
+    lines: [
+      { key: "bills", text: "Your bills are still yours to pay." },
+      {
+        key: "family",
+        text: `When a payment looks unusual, ${both ? `${input.organizer} or ${input.sibling}` : input.organizer} takes a second look before any money moves.`,
+      },
+      {
+        key: "wait",
+        text: both ? `If no one answers within ${wait}, nothing is paid.` : `If ${input.organizer} doesn’t answer within ${wait}, nothing is paid.`,
+      },
+    ],
+    button: "That sounds good",
+    pending: "One moment…",
+  };
+}

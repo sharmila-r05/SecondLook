@@ -154,6 +154,55 @@
   stroke-width: 2.25;
 }
 
+/* Her agreement, in a family just set up: three plain sentences as rows of the panel, read at her entries' size but
+   regular weight, each with a calm icon in the mark cell; one tall yes block where the two actions will be. */
+.statement {
+  align-items: center;
+}
+
+.statement .mark {
+  grid-row: auto;
+  padding-top: 0;
+}
+
+.statement p {
+  text-wrap: pretty;
+}
+
+.lineIcon {
+  display: block;
+  width: 36px;
+  height: 36px;
+  color: var(--margaret);
+  stroke-width: 2.25;
+}
+
+.agree {
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+}
+
+/* No connect block under the panel yet: one row, so the panel and the yes block end on the same line. */
+@media (min-width: 761px) {
+  .layout[data-agree] {
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
+.agreeButton {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+}
+
+.agreeButton:disabled {
+  cursor: progress;
+  filter: none;
+  transform: none;
+}
+
 /* "Connect your PayPal once": shown until she has, under everything else; one sentence pair and one button. */
 .connect {
   grid-column: 1;
@@ -233,9 +282,19 @@
   }
 
   .today,
-  .connect {
+  .connect,
+  .agree {
     grid-column: auto;
     grid-row: auto;
+  }
+
+  .statement {
+    gap: 4px 16px;
+    padding: 18px 20px;
+  }
+
+  .agreeButton {
+    min-height: 160px;
   }
 
   .actions {
