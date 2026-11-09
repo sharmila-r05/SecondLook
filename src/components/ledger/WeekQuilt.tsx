@@ -7,11 +7,15 @@ import styles from "./WeekQuilt.module.css";
 
 const STITCH: Record<BlockTone, StitchKind> = { settled: "light", processing: "light", waiting: "basting", cancelled: "pulled" };
 const SEEN_KEY = "second-look:ledger-seen";
+/** The current week's row is never shorter than this: unsewn spaces wait where this week's blocks will go. */
+const ROW_MIN = 5;
 
 /** The state mark on a block, drawn in the block's own thread colours. Decorative: the label says the same. */
 function BlockMark({ tone }: { tone: BlockTone }) {
+  // The cancelled hold's mark is the quilt's one big signal, sewn large above the pulled threads.
+  const size = tone === "cancelled" ? 56 : 30;
   return (
-    <svg className={styles.mark} width="30" height="30" viewBox="0 0 30 30" aria-hidden="true" focusable="false">
+    <svg className={styles.mark} width={size} height={size} viewBox="0 0 30 30" aria-hidden="true" focusable="false">
       {tone === "settled" && (
         <>
           <circle cx="15" cy="15" r="12.5" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -22,20 +26,24 @@ function BlockMark({ tone }: { tone: BlockTone }) {
       {tone === "waiting" && <circle className={styles.rose} cx="15" cy="15" r="12.5" fill="none" strokeWidth="3" />}
       {tone === "cancelled" && (
         <>
-          <circle className={styles.rose} cx="15" cy="15" r="12.5" fill="none" strokeWidth="2.6" />
-          <path className={styles.rose} d="M6.5 23.5L23.5 6.5" strokeWidth="2.6" strokeLinecap="round" />
+          <circle className={styles.rose} cx="15" cy="15" r="12.5" fill="none" strokeWidth="1.8" strokeDasharray="3 2.2" />
+          <path className={styles.rose} d="M5.5 24.5L24.5 5.5" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="3 2.2" />
         </>
       )}
     </svg>
   );
 }
 
-/** The cancelled hold's basting, pulled loose: rose threads hanging from the corner where the stitching came out. */
+/**
+ * The cancelled hold's basting, pulled out: the bottom run of its stitch is gone and the rose thread hangs below the
+ * block's edge in three loose loops.
+ */
 function PulledThreads() {
   return (
-    <svg className={styles.pulled} viewBox="0 0 76 68" aria-hidden="true" focusable="false">
-      <path d="M68 6 C 76 20, 50 24, 56 36 S 72 50, 58 62" />
-      <path d="M44 4 C 38 14, 28 10, 30 22" />
+    <svg className={styles.pulled} viewBox="0 0 160 48" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path d="M-3 0 C -4 30, 4 46, 18 46 C 32 46, 38 30, 32 18" />
+      <path d="M52 20 C 58 48, 100 50, 108 18" />
+      <path d="M163 0 C 164 30, 156 46, 142 46 C 128 46, 122 32, 128 20" />
     </svg>
   );
 }
@@ -84,15 +92,13 @@ function Detail({ block, id, empty }: { block: LedgerBlock | undefined; id: stri
   return (
     <section id={id} className={styles.detail} data-tone={block.tone} aria-labelledby={`${id}-title`}>
       <Stitch kind={stitch} />
+      {/* The swatch's colour says who set it going; the story's first line says who and when. */}
       <header className={styles.swatch} data-fabric={block.fabric}>
-        <p className={styles.swatchWho}>
-          {block.who} · {block.when}
-        </p>
         <h3 id={`${id}-title`} className={styles.detailTitle}>
           {block.title}
         </h3>
         <p className={styles.detailAmount}>
-          {block.amount} · {block.label}
+          {block.amount} · {block.state}
         </p>
       </header>
 
@@ -122,40 +128,22 @@ function Detail({ block, id, empty }: { block: LedgerBlock | undefined; id: stri
 
       {block.steps.length > 0 && (
         <div className={styles.paypal}>
-          <h4 className={styles.minor}>PayPal steps</h4>
-          <p className={styles.flow}>{block.flow}</p>
+          <h4 className={styles.flow}>PayPal: {block.flow}</h4>
+          {/* One line per call: what was called, then the ID PayPal returned and its status. The table below carries
+              each call's PayPal-Request-Id. */}
           <ol className={styles.steps}>
             {block.steps.map((step, i) => (
               <li key={`${step.call}-${i}`} className={styles.step}>
                 <p className={styles.call}>{step.call}</p>
-                <dl className={styles.facts}>
-                  <dt>{step.idLabel}</dt>
-                  <dd>
-                    <code>{step.paypalId ?? "waiting for PayPal"}</code>
-                  </dd>
-                  {step.status && (
-                    <>
-                      <dt>Status</dt>
-                      <dd>{step.status}</dd>
-                    </>
-                  )}
-                  {step.ours && (
-                    <>
-                      <dt>{step.ours.label}</dt>
-                      <dd>
-                        <code>{step.ours.value}</code>
-                      </dd>
-                    </>
-                  )}
-                  {step.requestId && (
-                    <>
-                      <dt>Request-Id</dt>
-                      <dd>
-                        <code title={step.requestId}>{step.requestId}</code>
-                      </dd>
-                    </>
-                  )}
-                </dl>
+                <p className={styles.fact}>
+                  {step.paypalId ? <code>{step.paypalId}</code> : "Waiting for PayPal"}
+                  {step.status && ` · ${step.status}`}
+                </p>
+                {step.ours && (
+                  <p className={styles.ours}>
+                    {step.ours.label} <code>{step.ours.value}</code>
+                  </p>
+                )}
               </li>
             ))}
           </ol>
@@ -232,10 +220,8 @@ export function WeekQuilt({ weeks, initialSelected }: { weeks: LedgerWeek[]; ini
                     </p>
                   )}
                 </div>
-                {week.blocks.length === 0 ? (
-                  <p className={styles.emptyRow}>
-                    {week.current ? "Nothing has moved yet this week." : "Nothing moved this week."}
-                  </p>
+                {week.blocks.length === 0 && !week.current ? (
+                  <p className={styles.emptyRow}>Nothing moved this week.</p>
                 ) : (
                   <ul className={styles.row}>
                     {week.blocks.map((block) => (
@@ -243,6 +229,17 @@ export function WeekQuilt({ weeks, initialSelected }: { weeks: LedgerWeek[]; ini
                         <Block block={block} selected={block.id === current?.id} onSelect={() => setSelected(block.id)} />
                       </li>
                     ))}
+                    {/* This week's unsewn spaces: dashed outlines where the next money moves will be stitched in. */}
+                    {week.current &&
+                      Array.from({ length: Math.max(0, ROW_MIN - week.blocks.length) }, (_, i) =>
+                        i === 0 && week.blocks.length === 0 ? (
+                          <li key="unsewn-0" className={`${styles.unsewn} ${styles.unsewnNote}`}>
+                            <p>Nothing has moved yet this week.</p>
+                          </li>
+                        ) : (
+                          <li key={`unsewn-${i}`} className={i === 0 ? `${styles.unsewn} ${styles.unsewnFirst}` : styles.unsewn} aria-hidden="true" />
+                        ),
+                      )}
                   </ul>
                 )}
                 {hasSelected && (

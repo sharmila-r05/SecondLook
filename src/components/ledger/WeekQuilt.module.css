@@ -19,7 +19,7 @@
 
 @container (min-width: 860px) {
   .layout {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
     gap: 32px;
   }
 
@@ -27,10 +27,7 @@
     display: block;
     position: sticky;
     top: 16px;
-    max-height: calc(100dvh - 32px);
-    overflow-y: auto;
-    border-radius: var(--radius-block);
-    overscroll-behavior: contain;
+    align-self: start;
   }
 
   .inline {
@@ -77,6 +74,7 @@
 }
 
 .row {
+  --block-min: 284px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
   gap: 6px;
@@ -87,6 +85,21 @@
 
 .cell {
   display: flex;
+}
+
+/* This week's unsewn spaces: where the next money moves will be stitched in, so a quiet week still reads as a row. */
+.unsewn {
+  display: grid;
+  align-content: end;
+  min-height: var(--block-min);
+  padding: 18px 16px;
+  border: 2px dashed var(--stitch);
+  border-radius: var(--radius-block);
+  background: rgb(255 255 255 / 0.25);
+  color: var(--ink-muted);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .emptyRow {
@@ -142,7 +155,7 @@
   grid-template-rows: auto 1fr;
   align-content: space-between;
   width: 100%;
-  min-height: 236px;
+  min-height: var(--block-min, 284px);
   padding: 16px 16px 14px;
   border: 0;
   border-radius: var(--radius-block);
@@ -181,6 +194,21 @@
 
 .block[data-tone="cancelled"] svg rect {
   opacity: 0.85;
+}
+
+/* The cancelled hold: its words sit up top, the bottom run of its stitch is pulled out, and the thread hangs below
+   the edge under a large crossed-out ring. */
+.block[data-tone="cancelled"] {
+  padding-bottom: 104px;
+}
+
+.block[data-tone="cancelled"] .bottom {
+  align-self: start;
+  margin-top: 14px;
+}
+
+.block[data-tone="cancelled"] > svg:first-of-type {
+  clip-path: inset(0 0 26px 0);
 }
 
 .top {
@@ -232,17 +260,23 @@
   color: var(--on-fabric);
 }
 
+.block[data-tone="cancelled"] .mark {
+  right: 16px;
+  bottom: 50px;
+}
+
 .rose {
   stroke: var(--rose-on);
 }
 
-/* The cancelled hold: loose rose threads hanging from the top corner, clear of the words. */
+/* The pulled basting: three loose rose loops hanging below the block's bottom edge, where the stitch came out. */
 .pulled {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 76px;
-  height: 68px;
+  top: auto;
+  bottom: -12px;
+  left: 10px;
+  width: calc(100% - 20px);
+  height: 48px;
   overflow: visible;
   pointer-events: none;
 }
@@ -250,9 +284,10 @@
 .pulled path {
   fill: none;
   stroke: var(--rose-on);
-  stroke-width: 2.5;
+  stroke-width: 3;
   stroke-linecap: round;
-  stroke-dasharray: 6 5;
+  stroke-dasharray: 8 6;
+  vector-effect: non-scaling-stroke;
 }
 
 /* A money move that arrived since the last look stitches itself in. */
@@ -283,8 +318,8 @@
 .detail {
   position: relative;
   display: grid;
-  gap: 16px;
-  padding: 10px 10px 20px;
+  gap: 14px;
+  padding: 10px 10px 18px;
   border-radius: var(--radius-block);
   background: var(--paper);
   font-size: 1rem;
@@ -306,15 +341,10 @@
 .swatch {
   display: grid;
   gap: 2px;
-  padding: 16px 16px 18px;
+  padding: 14px 16px 16px;
   border-radius: 10px;
   background: var(--fabric);
   color: var(--on-fabric);
-}
-
-.swatchWho {
-  font-size: 0.875rem;
-  font-weight: 700;
 }
 
 .detailTitle {
@@ -333,6 +363,7 @@
   font-size: 1.0625rem;
   font-weight: 800;
   line-height: 1.35;
+  text-wrap: pretty;
 }
 
 .detail[data-tone="cancelled"] .outcome,
@@ -342,7 +373,8 @@
 
 .story {
   display: grid;
-  gap: 10px;
+  gap: 8px;
+  font-size: 0.9375rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -367,11 +399,9 @@
 
 .minor {
   margin: 0 0 8px;
-  color: var(--ink-muted);
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  line-height: 1.3;
 }
 
 .chips {
@@ -397,15 +427,17 @@
 }
 
 .flow {
-  margin-bottom: 10px;
+  margin: 0 0 12px;
   color: var(--plum-700);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 800;
+  line-height: 1.35;
+  text-wrap: pretty;
 }
 
 .steps {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -414,7 +446,7 @@
 
 .step {
   display: grid;
-  gap: 4px;
+  gap: 1px;
   padding-left: 30px;
   position: relative;
   counter-increment: step;
@@ -441,46 +473,64 @@
   font-weight: 800;
 }
 
-.facts {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 2px 10px;
-  margin: 0;
-  font-size: 0.875rem;
-}
-
-.facts dt {
-  color: var(--ink-muted);
-}
-
-.facts dd {
-  margin: 0;
+.fact,
+.ours {
   min-width: 0;
+  font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
 
-.facts code {
+.ours {
+  color: var(--ink-muted);
+}
+
+.fact code,
+.ours code {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.8125rem;
 }
 
 @container (max-width: 420px) {
   .row {
+    --block-min: 212px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .block {
-    min-height: 212px;
     padding: 14px 12px 12px;
   }
 
+  .block[data-tone="cancelled"] {
+    padding-bottom: 100px;
+  }
+
+  .block[data-tone="cancelled"] .bottom {
+    margin-top: 10px;
+  }
+
+  /* Rows sit closer on a phone: the loose loops stop at the gap instead of hanging onto the block below. */
   .pulled {
-    width: 60px;
-    height: 54px;
+    bottom: -4px;
   }
 
   .amount {
     font-size: 1.25rem;
+  }
+
+  /* Two blocks to a row on a phone: an unsewn space only to finish an odd row, and the empty week's one note. */
+  .unsewn {
+    display: none;
+  }
+
+  .unsewnFirst:nth-child(even) {
+    display: grid;
+  }
+
+  .unsewnNote {
+    display: grid;
+    grid-column: 1 / -1;
+    align-content: center;
+    min-height: 120px;
   }
 }
 

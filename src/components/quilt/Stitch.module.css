@@ -45,7 +45,7 @@
   stroke: var(--thread-rose);
   stroke-width: 3;
   stroke-dasharray: 4 26;
-  opacity: 0.55;
+  opacity: 0.85;
 }
 
 @media (prefers-reduced-motion: reduce) {
