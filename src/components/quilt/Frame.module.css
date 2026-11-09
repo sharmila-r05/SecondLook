@@ -85,21 +85,25 @@
 
 @media (max-width: 760px) {
   .shell {
-    padding: 0 10px 10px;
+    padding: 0 8px 8px;
   }
 
+  /* Slim on phones: brand and Reset on one row, the sandbox line, then all five people in one row that fits 360px. */
   .bar {
-    gap: 10px 12px;
+    gap: 6px 10px;
+    padding: 10px 2px 8px;
     font-size: 1rem;
   }
 
   .brand {
-    font-size: 1.375rem;
+    gap: 10px;
+    font-size: 1.25rem;
   }
 
   .sandbox {
     order: 3;
     width: 100%;
+    font-size: 0.8125rem;
   }
 
   .roles {
@@ -110,5 +114,19 @@
 
   .roles ul {
     flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .role,
+  .reset {
+    min-height: 38px;
+    padding: 0 9px;
+    border-radius: 9px;
+    font-size: 0.875rem;
+  }
+
+  .reset {
+    padding: 0 12px;
   }
 }
