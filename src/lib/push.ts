@@ -111,8 +111,11 @@ export async function notifyChildren(
     const sql = db();
     const rows = await sql<{ endpoint: string; keys: StoredSubscription["keys"]; name: string }[]>`
       select ps.endpoint, ps.keys, m.name
-      from push_subscriptions ps join members m on m.id = ps.member_id
+      from push_subscriptions ps
+      join members m on m.id = ps.member_id
+      join families f on f.id = m.family_id
       where ps.demo_session_id = ${sessionId} and m.family_id = ${family.id} and m.role = 'child'
+        and (f.ask = 'everyone' or m.id = f.organizer_member_id)
         and m.id is distinct from ${except ?? null}::uuid`;
     if (rows.length === 0) return;
     const gone = await deliver(

@@ -3,9 +3,9 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { VISIT_RATE_CENTS } from "@/lib/demo/seed";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily } from "@/lib/family";
+import { parentAgrees } from "@/lib/family-setup";
 import { PayPalError } from "@/lib/paypal";
 import { getSessionId } from "@/lib/session";
 import { localDate } from "@/lib/time";
@@ -41,12 +41,19 @@ export async function confirmVisitToday(): Promise<void> {
   await db().begin(async (tx) => {
     const inserted = await tx`
       insert into visits (demo_session_id, family_id, aide_member_id, visit_date, confirmed_by, rate_cents, created_at)
-      values (${sessionId}, ${family.id}, ${aide.id}, ${localDate(now)}, 'parent', ${VISIT_RATE_CENTS}, ${now})
+      values (${sessionId}, ${family.id}, ${aide.id}, ${localDate(now)}, 'parent', ${family.settings.visitRateCents}, ${now})
       on conflict (aide_member_id, visit_date) do nothing
       returning id`;
     if (inserted.length > 0) {
-      await recordEvent(tx, family, sessionId, "visit:confirmed", { by: "Margaret", aide: aide.name, rateCents: VISIT_RATE_CENTS });
+      await recordEvent(tx, family, sessionId, "visit:confirmed", { by: "Margaret", aide: aide.name, rateCents: family.settings.visitRateCents });
     }
   });
+  redirect("/parent");
+}
+
+/** Margaret says yes to Second Look, once, on her own screen: the first thing she sees in a family just set up. */
+export async function agreeToSecondLook(): Promise<void> {
+  const sessionId = await getSessionId();
+  await parentAgrees(await ensureFamily(sessionId), sessionId);
   redirect("/parent");
 }

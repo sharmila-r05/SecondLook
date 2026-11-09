@@ -23,7 +23,14 @@ export type EventType =
   | "paypal:invoice_paid"
   | "week:closed"
   | "ai:note"
-  | "workflow:started";
+  | "workflow:started"
+  | "family:setup_started"
+  | "family:bills_set"
+  | "family:rules_set"
+  | "family:care_set"
+  | "family:setup_done"
+  | "member:joined"
+  | "parent:agreed";
 
 export async function recordEvent(
   sql: postgres.Sql | postgres.TransactionSql,

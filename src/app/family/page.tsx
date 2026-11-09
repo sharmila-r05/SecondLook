@@ -11,6 +11,7 @@ import { getCare, refreshCare } from "@/lib/care";
 import { cancelsAt, familyCard, type SecondLook } from "@/lib/copy/family";
 import { ensureFamily, getSecondLooks } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
+import { requireSetUp } from "@/lib/setup-gate";
 import { decide } from "./actions";
 import { WeekQuilt } from "@/components/ledger/WeekQuilt";
 import { buildLedger } from "@/lib/ledger";
@@ -89,6 +90,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
   const tab: Tab = params.tab === "money" || params.tab === "care" ? params.tab : "needs";
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  requireSetUp(family);
   await sweepExpiredHolds(family, sessionId);
   after(() => sweepOtherExpiredHolds());
   await refreshCare(family, sessionId);

@@ -3,7 +3,6 @@
 import { redirect } from "next/navigation";
 import { familyAide } from "@/lib/aide";
 import { db } from "@/lib/db";
-import { VISIT_RATE_CENTS } from "@/lib/demo/seed";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
@@ -23,7 +22,7 @@ export async function checkIn(): Promise<void> {
     const touched = await tx<{ rate_cents: string }[]>`
       insert into visits (demo_session_id, family_id, aide_member_id, visit_date, confirmed_by, rate_cents,
                           checked_in_at, created_at)
-      values (${sessionId}, ${family.id}, ${aide.id}, ${localDate(now)}, 'aide', ${VISIT_RATE_CENTS}, ${now}, ${now})
+      values (${sessionId}, ${family.id}, ${aide.id}, ${localDate(now)}, 'aide', ${family.settings.visitRateCents}, ${now}, ${now})
       on conflict (aide_member_id, visit_date) do update set checked_in_at = excluded.checked_in_at
         where visits.family_id = excluded.family_id and visits.checked_in_at is null and visits.checked_out_at is null
       returning rate_cents`;

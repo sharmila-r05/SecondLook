@@ -2,20 +2,36 @@
 // no money moves: anything in the ledger happened for real, in the PayPal sandbox, during this session.
 
 import type postgres from "postgres";
+import { DEFAULT_HOLD_MINUTES } from "@/lib/settings";
 import { addDays, localDate } from "@/lib/time";
 import { SANDBOX_EMAILS } from "./accounts";
+import { PAYEE_CATALOG } from "./payees";
 
-/** Rosa is paid $50.00 a visit. */
+/** Rosa is paid $50.00 a visit unless the family sets another rate. */
 export const VISIT_RATE_CENTS = 5000;
-/** Margaret's per-payment limit: anything over $300.00 goes to family for a second look. */
+/** Margaret's per-payment limit: anything over $300.00 goes to family for a second look, unless the family changes it. */
 export const PER_PAYMENT_LIMIT_CENTS = 30000;
 
 const ROSA_EARLIER_VISITS = [-4, -2]; // days before today: her week is never empty, whatever the weekday
 
-export async function seedFamily(tx: postgres.TransactionSql, sessionId: string, now = new Date()): Promise<string> {
+/**
+ * "ready": the Hale family as a visitor first finds it, set up by Sarah, Margaret agreed and (on the hosted demo)
+ * her PayPal connected. "setup": the same people with nothing chosen yet, for the organizer to set up step by step.
+ */
+export type SeedOptions = { origin: "ready" } | { origin: "setup"; organizer: "Sarah" | "Tom" };
+
+export async function seedFamily(
+  tx: postgres.TransactionSql,
+  sessionId: string,
+  options: SeedOptions = { origin: "ready" },
+  now = new Date(),
+): Promise<string> {
+  const ready = options.origin === "ready";
   const [family] = await tx<{ id: string }[]>`
-    insert into families (demo_session_id, name, split_rule)
-    values (${sessionId}, 'The Hale family', '{}')
+    insert into families (demo_session_id, name, split_rule, origin, limit_cents, hold_minutes, visit_rate_cents,
+                          setup_step, setup_completed_at, parent_agreed_at)
+    values (${sessionId}, 'The Hale family', '{}', ${options.origin}, ${PER_PAYMENT_LIMIT_CENTS}, ${DEFAULT_HOLD_MINUTES},
+            ${VISIT_RATE_CENTS}, ${ready ? null : "bills"}, ${ready ? now : null}, ${ready ? now : null})
     returning id`;
   if (!family) throw new Error("seeding the family returned no row");
   const base = { demo_session_id: sessionId, family_id: family.id };
@@ -34,8 +50,15 @@ export async function seedFamily(tx: postgres.TransactionSql, sessionId: string,
     return found.id;
   };
 
-  // Sarah and Tom split Rosa's pay evenly; Sarah takes a leftover cent on a tie (hard rule 5).
-  await tx`update families set split_rule = ${tx.json({ [memberId("Sarah")]: 50, [memberId("Tom")]: 50 })} where id = ${family.id}`;
+  // Sarah and Tom split Rosa's pay evenly until they choose otherwise; Sarah takes a leftover cent (hard rule 5).
+  const organizer = ready ? "Sarah" : options.organizer;
+  await tx`
+    update families set split_rule = ${tx.json({ [memberId("Sarah")]: 50, [memberId("Tom")]: 50 })},
+                        organizer_member_id = ${memberId(organizer)}
+    where id = ${family.id}`;
+
+  // A family being set up starts with nothing chosen: Mom's bills, her PayPal and Rosa's visits come from the steps.
+  if (!ready) return family.id;
 
   // The hosted demo's Margaret has already connected her PayPal once (Vault): set DEMO_PARENT_VAULT_ID to that payment
   // token, and every visitor's bills are paid from it with no PayPal login. Unset, she connects it herself.
@@ -44,27 +67,18 @@ export async function seedFamily(tx: postgres.TransactionSql, sessionId: string,
     await tx`update members set paypal_vault_id = ${vaultId}, vaulted_at = now() where id = ${memberId("Margaret")} and role = 'parent'`;
   }
 
+  // Known payees carry no limit of their own: the family's limit applies to them.
   await tx`
-    insert into payees ${tx([
-      {
+    insert into payees ${tx(
+      PAYEE_CATALOG.map((p) => ({
         ...base,
-        name: "Hollowbrook Electric",
-        aliases: ["electric", "electric bill", "electricity", "power", "power bill", "power company", "light bill", "hollowbrook"],
-        paypal_email: SANDBOX_EMAILS.electric,
+        name: p.name,
+        aliases: p.aliases,
+        paypal_email: p.paypalEmail,
         known: true,
-        per_payment_limit_cents: PER_PAYMENT_LIMIT_CENTS,
-        usual_amount_cents: 8400,
-      },
-      {
-        ...base,
-        name: "Elmwood Pharmacy",
-        aliases: ["pharmacy", "drugstore", "prescription", "prescriptions", "medicine", "elmwood"],
-        paypal_email: SANDBOX_EMAILS.pharmacy,
-        known: true,
-        per_payment_limit_cents: PER_PAYMENT_LIMIT_CENTS,
-        usual_amount_cents: 2340,
-      },
-    ])}`;
+        usual_amount_cents: p.usualAmountCents,
+      })),
+    )}`;
 
   // Rosa's two earlier visits, so a visitor on any weekday sees a week worth closing. Visits move no money until the
   // week closes. November and December are Eastern Standard Time (UTC-5).

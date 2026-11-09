@@ -5,6 +5,7 @@ import { Stitch } from "@/components/quilt/Stitch";
 import { db } from "@/lib/db";
 import { ensureFamily, memberNamed } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
+import { requireParentAgreed } from "@/lib/setup-gate";
 import { formatTime, localDate } from "@/lib/time";
 import { confirmVisitToday } from "../actions";
 import styles from "../ask.module.css";
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ConfirmVisit() {
   const family = await ensureFamily(await getSessionId());
+  requireParentAgreed(family);
   const aide = memberNamed(family, "aide") ?? "The aide";
   const [already] = await db()<{ at: Date }[]>`
     select coalesce(checked_in_at, created_at) as at from visits

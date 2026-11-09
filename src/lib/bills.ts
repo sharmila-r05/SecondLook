@@ -29,7 +29,6 @@ import { forgetSavedPayPal, savedPayPal } from "@/lib/vault";
 
 type Sql = postgres.Sql | postgres.TransactionSql;
 
-const HOLD_MINUTES = Number(process.env.HOLD_TIMEOUT_MINUTES ?? 10) || 10;
 
 export interface BillRequest {
   id: string;
@@ -352,7 +351,7 @@ export async function abandonBill(family: Pick<Family, "id">, requestId: string)
  * slept): a held request nobody answered in time expires and its hold is voided. Also retries any denied or expired
  * request whose void didn't finish.
  */
-export async function sweepExpiredHolds(family: Pick<Family, "id">, sessionId: string): Promise<void> {
+export async function sweepExpiredHolds(family: Pick<Family, "id" | "settings">, sessionId: string): Promise<void> {
   const sql = db();
   const due = await sql<{ id: string }[]>`
     select id from payment_requests
@@ -368,7 +367,7 @@ export async function sweepExpiredHolds(family: Pick<Family, "id">, sessionId: s
       and exists (select 1 from payments p where p.payment_request_id = pr.id and p.kind = 'authorization' and p.paypal_authorization_id is not null)`;
   for (const { id } of undecided) {
     try {
-      await settleBill(family, sessionId, id, HOLD_MINUTES, async (bill) => templateNote(bill));
+      await settleBill(family, sessionId, id, family.settings.holdMinutes, async (bill) => templateNote(bill));
     } catch (err) {
       console.error("deciding a placed hold failed; the next look retries:", err instanceof Error ? err.message : err);
     }

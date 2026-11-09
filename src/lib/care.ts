@@ -10,7 +10,7 @@ import { db } from "@/lib/db";
 import { SANDBOX_EMAILS } from "@/lib/demo/accounts";
 import { recordEvent } from "@/lib/events";
 import type { Family } from "@/lib/family";
-import { memberNamed } from "@/lib/family";
+import { loadFamily, memberNamed } from "@/lib/family";
 import { assertCents, splitCents } from "@/lib/money";
 import { createInvoice, getInvoice, PayPalError, sendInvoice } from "@/lib/paypal";
 import { localDate } from "@/lib/time";
@@ -193,8 +193,7 @@ export async function finishClosingById(periodId: string): Promise<{ status: str
   const [period] = await sql<{ family_id: string; demo_session_id: string }[]>`
     select family_id, demo_session_id from care_periods where id = ${periodId}`;
   if (!period) return { status: "unknown period" };
-  const members = await sql<Family["members"]>`select id, name, role from members where family_id = ${period.family_id}`;
-  await finishClosing({ id: period.family_id, members: [...members] }, period.demo_session_id, periodId);
+  await finishClosing(await loadFamily(sql, period.family_id), period.demo_session_id, periodId);
   const [after] = await sql<{ status: string }[]>`select status from care_periods where id = ${periodId}`;
   return { status: after?.status ?? "unknown" };
 }

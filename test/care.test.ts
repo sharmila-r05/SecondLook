@@ -3,10 +3,10 @@ import { invoiceNumber, periodSpan, shareOut } from "@/lib/care";
 import type { Member } from "@/lib/family";
 
 const members: Member[] = [
-  { id: "m", name: "Margaret", role: "parent" },
-  { id: "s", name: "Sarah", role: "child" },
-  { id: "t", name: "Tom", role: "child" },
-  { id: "r", name: "Rosa", role: "aide" },
+  { id: "m", name: "Margaret", role: "parent", joinedAt: null },
+  { id: "s", name: "Sarah", role: "child", joinedAt: null },
+  { id: "t", name: "Tom", role: "child", joinedAt: null },
+  { id: "r", name: "Rosa", role: "aide", joinedAt: null },
 ];
 
 describe("shareOut", () => {

@@ -10,6 +10,7 @@ import { assertCents, formatUsd } from "@/lib/money";
 import { matchPayee, parseRequest } from "@/lib/parse";
 import { PayPalError } from "@/lib/paypal";
 import { evaluate } from "@/lib/risk";
+import { riskPolicy } from "@/lib/settings";
 import { getSessionId } from "@/lib/session";
 import { localDate, PARENT_TIME_ZONE } from "@/lib/time";
 import { publicOrigin } from "@/lib/redirect";
@@ -32,6 +33,7 @@ export async function hearRequest(text: string): Promise<ReadBack> {
   if (!said) return { ok: false, message: "I didn't hear anything. Tap the microphone and try again, or type it below." };
 
   const family = await ensureFamily(await getSessionId());
+  if (!family.settings.parentAgreedAt) return { ok: false, message: "", goTo: "/parent" };
   const parsed = parseRequest(said, memberNamed(family, "aide"));
   if (parsed?.kind === "visit") return { ok: false, message: "", goTo: "/parent/visit" };
   if (!parsed) {
@@ -62,6 +64,7 @@ export async function hearRequest(text: string): Promise<ReadBack> {
 export async function confirmRequest(input: { said: string; payeeId: string | null; payeeName: string; amountCents: number }): Promise<void> {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  if (!family.settings.parentAgreedAt) redirect("/parent");
   assertCents(input.amountCents);
   if (input.amountCents <= 0 || input.amountCents > MAX_REQUEST_CENTS) throw new RangeError("amount out of range");
   const payeeName = input.payeeName.trim().slice(0, 80);
@@ -101,7 +104,7 @@ export async function confirmRequest(input: { said: string; payeeId: string | nu
         : null,
       payeeAsHeard: payeeName,
       todaysTotalCents: Number(today?.total ?? 0),
-    });
+    }, riskPolicy(family.settings));
 
     // Status stays "new" until PayPal has authorized the payment; only then is it auto-approved or held.
     const [request] = await tx<{ id: string }[]>`

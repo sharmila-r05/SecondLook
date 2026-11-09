@@ -46,6 +46,13 @@ services:
       # Margaret's saved PayPal (a Vault payment token), so visitors' bills need no PayPal login.
       - key: DEMO_PARENT_VAULT_ID
         sync: false
+      # Signing in by email: cookies and address hashes are signed with AUTH_SECRET; mail goes out through Resend.
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
       # Close-the-week's PayPal steps run on the Render Workflows service `secondlook-close-week` (workflows/close-week.ts,
       # created with Render's API: `type: workflow` in this Blueprint failed to sync) when the API key is set; without
       # it they run inline. Its start command: node --experimental-transform-types --import ./workflows/register.mjs

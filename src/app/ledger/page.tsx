@@ -11,6 +11,7 @@ import { ensureFamily } from "@/lib/family";
 import { buildLedger } from "@/lib/ledger";
 import { getLedgerInput } from "@/lib/ledger-data";
 import { getSessionId } from "@/lib/session";
+import { requireSetUp } from "@/lib/setup-gate";
 import styles from "./ledger.module.css";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
 export default async function LedgerPage() {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  requireSetUp(family);
   // The same lazy sweep the family screen runs, so a hold nobody answered reads as cancelled here too.
   await sweepExpiredHolds(family, sessionId);
   after(() => sweepOtherExpiredHolds());
