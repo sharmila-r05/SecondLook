@@ -1,0 +1,113 @@
+{
+  "saved_at": "2026-11-09T07:05:26.754Z",
+  "method": "POST",
+  "path": "/v2/checkout/orders",
+  "request_id": "69c3a7c3-e31a-4b71-9938-6d3d35ba9311",
+  "http_status": 201,
+  "debug_id": "ca57af8087e74",
+  "ms": 2187,
+  "response": {
+    "id": "95V858859T012980X",
+    "intent": "AUTHORIZE",
+    "status": "COMPLETED",
+    "payment_source": {
+      "paypal": {
+        "email_address": "<margaret>",
+        "account_id": "XTUU2KKXN5RES",
+        "account_status": "VERIFIED",
+        "name": {
+          "given_name": "<given>",
+          "surname": "<surname>"
+        },
+        "address": {
+          "country_code": "US"
+        }
+      }
+    },
+    "purchase_units": [
+      {
+        "reference_id": "gate-vault-1",
+        "amount": {
+          "currency_code": "USD",
+          "value": "84.00"
+        },
+        "payee": {
+          "email_address": "<secondlook>",
+          "merchant_id": "Y3WGWVT9JFCUG"
+        },
+        "description": "Hollowbrook Electric, paid by Margaret through Second Look",
+        "custom_id": "gate-vault-1",
+        "payments": {
+          "authorizations": [
+            {
+              "status": "CREATED",
+              "id": "8LD876333G4755238",
+              "amount": {
+                "currency_code": "USD",
+                "value": "84.00"
+              },
+              "custom_id": "gate-vault-1",
+              "seller_protection": {
+                "status": "ELIGIBLE",
+                "dispute_categories": [
+                  "ITEM_NOT_RECEIVED",
+                  "UNAUTHORIZED_TRANSACTION"
+                ]
+              },
+              "expiration_time": "2026-12-08T07:05:25Z",
+              "links": [
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/8LD876333G4755238",
+                  "rel": "self",
+                  "method": "GET"
+                },
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/8LD876333G4755238/capture",
+                  "rel": "capture",
+                  "method": "POST"
+                },
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/8LD876333G4755238/void",
+                  "rel": "void",
+                  "method": "POST"
+                },
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/8LD876333G4755238/reauthorize",
+                  "rel": "reauthorize",
+                  "method": "POST"
+                },
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/checkout/orders/95V858859T012980X",
+                  "rel": "up",
+                  "method": "GET"
+                }
+              ],
+              "create_time": "2026-11-09T07:05:25Z",
+              "update_time": "2026-11-09T07:05:25Z"
+            }
+          ]
+        }
+      }
+    ],
+    "payer": {
+      "name": {
+        "given_name": "<given>",
+        "surname": "<surname>"
+      },
+      "email_address": "<margaret>",
+      "payer_id": "XTUU2KKXN5RES",
+      "address": {
+        "country_code": "US"
+      }
+    },
+    "create_time": "2026-11-09T07:05:24Z",
+    "update_time": "2026-11-09T07:05:25Z",
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v2/checkout/orders/95V858859T012980X",
+        "rel": "self",
+        "method": "GET"
+      }
+    ]
+  }
+}

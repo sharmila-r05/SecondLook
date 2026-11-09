@@ -37,6 +37,13 @@ export async function seedFamily(tx: postgres.TransactionSql, sessionId: string,
   // Sarah and Tom split Rosa's pay evenly; Sarah takes a leftover cent on a tie (hard rule 5).
   await tx`update families set split_rule = ${tx.json({ [memberId("Sarah")]: 50, [memberId("Tom")]: 50 })} where id = ${family.id}`;
 
+  // The hosted demo's Margaret has already connected her PayPal once (Vault): set DEMO_PARENT_VAULT_ID to that payment
+  // token, and every visitor's bills are paid from it with no PayPal login. Unset, she connects it herself.
+  const vaultId = process.env.DEMO_PARENT_VAULT_ID;
+  if (vaultId) {
+    await tx`update members set paypal_vault_id = ${vaultId}, vaulted_at = now() where id = ${memberId("Margaret")} and role = 'parent'`;
+  }
+
   await tx`
     insert into payees ${tx([
       {
