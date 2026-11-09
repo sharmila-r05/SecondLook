@@ -113,7 +113,7 @@ export function SignInForm({ minutes, linkExpired }: { minutes: number; linkExpi
         sign you in.
       </p>
 
-      {linkExpired && !state.error && (
+      {linkExpired && state === START && (
         <p className={styles.notice} role="status">
           That sign-in link has expired or was already used. Type your email and we&rsquo;ll send a new one.
         </p>
