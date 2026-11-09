@@ -12,6 +12,7 @@ import { SANDBOX_EMAILS } from "@/lib/demo/accounts";
 import { recordEvent } from "@/lib/events";
 import type { Family } from "@/lib/family";
 import { assertCents } from "@/lib/money";
+import { templateNote } from "@/lib/note";
 import {
   authorizeOrder,
   captureAuthorization,
@@ -27,6 +28,8 @@ import { type PaymentRequestState, transition } from "@/lib/states";
 import { forgetSavedPayPal, savedPayPal } from "@/lib/vault";
 
 type Sql = postgres.Sql | postgres.TransactionSql;
+
+const HOLD_MINUTES = Number(process.env.HOLD_TIMEOUT_MINUTES ?? 10) || 10;
 
 export interface BillRequest {
   id: string;
@@ -357,6 +360,20 @@ export async function sweepExpiredHolds(family: Pick<Family, "id">, sessionId: s
   for (const { id } of due) {
     if (await moveRequest(sql, id, "held", "expired")) await recordEvent(sql, family, sessionId, "request:expired", { requestId: id });
   }
+  // A hold placed but never decided (the decision step failed after PayPal authorized): decide it now, so Margaret's
+  // money isn't left held with no one asked. A minute's grace leaves the normal path time to finish first.
+  const undecided = await sql<{ id: string }[]>`
+    select pr.id from payment_requests pr
+    where pr.family_id = ${family.id} and pr.status = 'new' and pr.created_at < now() - interval '1 minute'
+      and exists (select 1 from payments p where p.payment_request_id = pr.id and p.kind = 'authorization' and p.paypal_authorization_id is not null)`;
+  for (const { id } of undecided) {
+    try {
+      await settleBill(family, sessionId, id, HOLD_MINUTES, async (bill) => templateNote(bill));
+    } catch (err) {
+      console.error("deciding a placed hold failed; the next look retries:", err instanceof Error ? err.message : err);
+    }
+  }
+
   // Orders Margaret never approved or cancelled (closed the tab on PayPal's page): nothing was authorized.
   const abandoned = await sql<{ id: string }[]>`
     select id from payment_requests
@@ -396,6 +413,29 @@ export async function sweepExpiredHolds(family: Pick<Family, "id">, sessionId: s
       await releaseHold(family, sessionId, await loadRequest(sql, family, id));
     } catch (err) {
       console.error("releasing a hold failed; the next look retries:", err instanceof Error ? err.message : err);
+    }
+  }
+}
+
+/**
+ * Holds that ran out in demo families nobody is looking at any more: expire and void a few on every page load, so
+ * abandoned sessions never keep Margaret's sandbox money held until PayPal's own 29-day expiry.
+ */
+export async function sweepOtherExpiredHolds(limit = 5): Promise<void> {
+  const sql = db();
+  const due = await sql<{ id: string; family_id: string; demo_session_id: string; status: PaymentRequestState }[]>`
+    select id, family_id, demo_session_id, status from payment_requests
+    where (status = 'held' and hold_expires_at < now() - interval '1 minute') or status in ('denied', 'expired')
+    order by updated_at limit ${limit}`;
+  for (const row of due) {
+    const family = { id: row.family_id };
+    try {
+      if (row.status === "held" && (await moveRequest(sql, row.id, "held", "expired"))) {
+        await recordEvent(sql, family, row.demo_session_id, "request:expired", { requestId: row.id });
+      }
+      await releaseHold(family, row.demo_session_id, await loadRequest(sql, family, row.id));
+    } catch (err) {
+      console.error("releasing another family's expired hold failed; a later look retries:", err instanceof Error ? err.message : err);
     }
   }
 }

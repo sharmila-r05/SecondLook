@@ -1,9 +1,10 @@
 import { House, Mic } from "lucide-react";
 import Link from "next/link";
+import { after } from "next/server";
 import { Frame } from "@/components/quilt/Frame";
 import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
-import { sweepExpiredHolds } from "@/lib/bills";
+import { sweepExpiredHolds, sweepOtherExpiredHolds } from "@/lib/bills";
 import { CONNECT_COPY, orderForParent, parentLine } from "@/lib/copy/parent";
 import { ensureFamily, getParentDay, memberNamed } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
@@ -27,6 +28,7 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
   await sweepExpiredHolds(family, sessionId);
+  after(() => sweepOtherExpiredHolds());
   const { paypal } = await searchParams;
   const notice = paypal ? NOTICES[paypal] : undefined;
   const lines = orderForParent(await getParentDay(family, now)).map(parentLine);

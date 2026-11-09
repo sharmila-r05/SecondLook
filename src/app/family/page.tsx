@@ -11,12 +11,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { after } from "next/server";
 import { FamilyAlerts } from "@/components/push/FamilyAlerts";
 import { LiveRefresh } from "@/components/push/LiveRefresh";
 import { Frame } from "@/components/quilt/Frame";
 import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
-import { sweepExpiredHolds } from "@/lib/bills";
+import { sweepExpiredHolds, sweepOtherExpiredHolds } from "@/lib/bills";
 import { getCare, refreshCare } from "@/lib/care";
 import { cancelsAt, familyCard, type SecondLook } from "@/lib/copy/family";
 import { ensureFamily, getSecondLooks } from "@/lib/family";
@@ -100,6 +101,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
   await sweepExpiredHolds(family, sessionId);
+  after(() => sweepOtherExpiredHolds());
   await refreshCare(family, sessionId);
   const [looks, care, ledger] = await Promise.all([
     getSecondLooks(family),
