@@ -41,15 +41,17 @@ export async function getAideWeek(family: Family, now = new Date()): Promise<Aid
         checked_in_at: Date | null;
         checked_out_at: Date | null;
         created_at: Date;
+        care_period_id: string | null;
       }[]
     >`
-      select id, visit_date::text as date, confirmed_by, rate_cents, checked_in_at, checked_out_at, created_at
+      select id, visit_date::text as date, confirmed_by, rate_cents, checked_in_at, checked_out_at, created_at, care_period_id
       from visits
       where family_id = ${family.id} and aide_member_id = ${aide.id}
         and visit_date between ${firstDay}::date and ${today}::date
       order by visit_date`,
     sql<
       {
+        id: string;
         start_date: string;
         end_date: string;
         status: CarePeriod["status"];
@@ -57,7 +59,7 @@ export async function getAideWeek(family: Family, now = new Date()): Promise<Aid
         paid_at: Date | null;
       }[]
     >`
-      select cp.start_date::text as start_date, cp.end_date::text as end_date, cp.status,
+      select cp.id, cp.start_date::text as start_date, cp.end_date::text as end_date, cp.status,
              payout.cents as payout_cents, payout.at as paid_at
       from care_periods cp
       left join lateral (
@@ -81,13 +83,14 @@ export async function getAideWeek(family: Family, now = new Date()): Promise<Aid
       checkedInAt: v.checked_in_at,
       checkedOutAt: v.checked_out_at,
       createdAt: v.created_at,
+      carePeriodId: v.care_period_id,
     };
   });
 
   const periods = periodRows.map((p): CarePeriod => {
     const payoutCents = p.payout_cents === null ? null : Number(p.payout_cents);
     if (payoutCents !== null) assertCents(payoutCents, "payout");
-    return { startDate: p.start_date, endDate: p.end_date, status: p.status, payoutCents, paidAt: p.paid_at };
+    return { id: p.id, startDate: p.start_date, endDate: p.end_date, status: p.status, payoutCents, paidAt: p.paid_at };
   });
 
   return {

@@ -14,9 +14,12 @@ export interface AideVisit {
   checkedOutAt: Date | null;
   /** When the visit was first noted: Rosa's check-in or Margaret's "Rosa came today". */
   createdAt: Date;
+  /** The care week that paid it, once one did (null: still waiting); left out, the week's dates decide. */
+  carePeriodId?: string | null;
 }
 
 export interface CarePeriod {
+  id?: string;
   startDate: string;
   endDate: string;
   status: "open" | "closing" | "closed";
@@ -53,13 +56,18 @@ function startedAt(visit: AideVisit): Date {
   return visit.checkedInAt ?? visit.createdAt;
 }
 
-function covers(period: CarePeriod, date: string): boolean {
-  return period.startDate <= date && date <= period.endDate;
+/**
+ * Whether this week paid this visit: by the week the visit records, which tells a visit logged after a close apart from
+ * one in the week closed that same day; by the week's dates when that isn't known.
+ */
+function covers(period: CarePeriod, visit: AideVisit): boolean {
+  if (visit.carePeriodId !== undefined && period.id !== undefined) return visit.carePeriodId === period.id;
+  return period.startDate <= visit.date && visit.date <= period.endDate;
 }
 
 /** A closed week covers this visit, so its pay has gone out to Rosa by PayPal. */
 export function isPaid(visit: AideVisit, periods: readonly CarePeriod[]): boolean {
-  return periods.some((p) => p.status === "closed" && covers(p, visit.date));
+  return periods.some((p) => p.status === "closed" && covers(p, visit));
 }
 
 export interface VisitRow {
@@ -115,11 +123,11 @@ export interface WeekSummary {
 export function weekSummary(visits: readonly AideVisit[], periods: readonly CarePeriod[], now = new Date()): WeekSummary {
   const totalCents = visits.reduce((sum, v) => sum + v.rateCents, 0);
   const settled = periods.filter((p) => p.status !== "open");
-  const waitingCents = visits.filter((v) => !settled.some((p) => covers(p, v.date))).reduce((sum, v) => sum + v.rateCents, 0);
+  const waitingCents = visits.filter((v) => !settled.some((p) => covers(p, v))).reduce((sum, v) => sum + v.rateCents, 0);
   const pay: WeekSummary["pay"] = [];
 
   for (const period of settled) {
-    const cents = period.payoutCents ?? visits.filter((v) => covers(period, v.date)).reduce((sum, v) => sum + v.rateCents, 0);
+    const cents = period.payoutCents ?? visits.filter((v) => covers(period, v)).reduce((sum, v) => sum + v.rateCents, 0);
     if (cents === 0) continue;
     if (period.status === "closing") {
       pay.push({ text: `${formatUsd(cents)} is on its way to you by PayPal.`, settled: false });

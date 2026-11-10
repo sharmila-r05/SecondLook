@@ -18,6 +18,7 @@ import { localDate } from "@/lib/time";
 type Sql = postgres.Sql | postgres.TransactionSql;
 
 export interface OpenVisit {
+  id: string;
   date: string;
   rateCents: number;
 }
@@ -72,13 +73,13 @@ async function splitRule(sql: Sql, familyId: string): Promise<Record<string, num
   return row?.split_rule ?? {};
 }
 
+/** Rosa's visits no closed week has paid yet, up to today: each visit carries the week that paid it. */
 async function openVisits(sql: Sql, familyId: string, today: string): Promise<OpenVisit[]> {
-  const rows = await sql<{ date: string; rate_cents: string }[]>`
-    select v.visit_date::text as date, v.rate_cents from visits v
-    where v.family_id = ${familyId} and v.visit_date <= ${today}::date
-      and v.visit_date > coalesce((select max(end_date) from care_periods where family_id = ${familyId}), '-infinity'::date)
+  const rows = await sql<{ id: string; date: string; rate_cents: string }[]>`
+    select v.id, v.visit_date::text as date, v.rate_cents from visits v
+    where v.family_id = ${familyId} and v.visit_date <= ${today}::date and v.care_period_id is null
     order by v.visit_date`;
-  return rows.map((r) => ({ date: r.date, rateCents: Number(r.rate_cents) }));
+  return rows.map((r) => ({ id: r.id, date: r.date, rateCents: Number(r.rate_cents) }));
 }
 
 export async function getCare(family: Family, now = new Date()): Promise<CareView> {
@@ -96,7 +97,7 @@ export async function getCare(family: Family, now = new Date()): Promise<CareVie
            (select status from payments where care_period_id = cp.id and kind = 'payout' limit 1) as payout_status
     from care_periods cp left join members m on m.id = cp.closed_by_member_id
     where cp.family_id = ${family.id} and cp.status in ('closing', 'closed')
-    order by cp.end_date desc limit 1`;
+    order by cp.end_date desc, cp.closed_at desc nulls last limit 1`;
   let last: ClosedPeriod | null = null;
   if (period) {
     const shares = await sql<{ id: string; member_id: string; name: string; amount_cents: string; status: ShareView["status"]; pay_url: string | null }[]>`
@@ -137,6 +138,8 @@ export async function closeWeek(family: Family, sessionId: string, closedByMembe
                                 visits, closed_by_member_id, closed_at)
       values (${id}, ${sessionId}, ${family.id}, ${visits[0]!.date}, ${today}, ${totalCents}, 'closing', ${`sl-care-${id}`},
               ${visits.length}, ${closedByMemberId}, now())`;
+    // These visits are this week's now: one Rosa logs later today waits for the next close instead of falling between.
+    await tx`update visits set care_period_id = ${id} where family_id = ${family.id} and id in ${tx(visits.map((v) => v.id))}`;
     await tx`
       insert into payments (demo_session_id, family_id, care_period_id, kind, paypal_request_id, amount_cents, status)
       values (${sessionId}, ${family.id}, ${id}, 'payout', ${randomUUID()}, ${totalCents}, 'paying')`;

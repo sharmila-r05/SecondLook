@@ -74,6 +74,18 @@ describe("visitRow", () => {
     expect(todayCard(visit("2026-11-11"), "Margaret", [period()])).toMatchObject({ step: "done", row: { day: "Today", paid: true } });
   });
 
+  it("is paid by the week that took it in, not by a week closed earlier the same day", () => {
+    const closedToday: CarePeriod = { id: "p1", startDate: "2026-11-09", endDate: "2026-11-11", status: "closed", payoutCents: 10000, paidAt: null };
+    expect(visitRow(visit("2026-11-11", { carePeriodId: "p1" }), [closedToday]).paid).toBe(true);
+    // Rosa logged this one after the week was closed that day: it waits for the next close.
+    const later = visit("2026-11-11", { carePeriodId: null });
+    expect(visitRow(later, [closedToday]).paid).toBe(false);
+    expect(weekSummary([later], [closedToday], new Date("2026-11-11T22:00:00Z")).pay).toContainEqual({
+      text: "$50.00 more arrives by PayPal when the family next closes the week.",
+      settled: false,
+    });
+  });
+
   it("uses when Margaret said Rosa came, for a visit Rosa didn't check in to", () => {
     const noted = visit("2026-11-11", { confirmedBy: "parent", checkedInAt: null, checkedOutAt: null, createdAt: new Date("2026-11-11T15:41:00Z") });
     expect(visitRow(noted).paid).toBe(false);
