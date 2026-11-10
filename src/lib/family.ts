@@ -220,13 +220,14 @@ export async function getSecondLooks(family: Family): Promise<SecondLook[]> {
       created_at: Date;
       updated_at: Date;
       risk_note: string | null;
+      request_text: string;
       triggered_rules: RuleHit[];
       hold_expires_at: Date | null;
       payee: string;
       decided_by: string | null;
     }[]
   >`
-    select pr.id, pr.status, pr.amount_cents, pr.created_at, pr.updated_at, pr.risk_note, pr.triggered_rules,
+    select pr.id, pr.status, pr.amount_cents, pr.created_at, pr.updated_at, pr.risk_note, pr.request_text, pr.triggered_rules,
            pr.hold_expires_at, p.name as payee, m.name as decided_by
     from payment_requests pr
     join payees p on p.id = pr.payee_id
@@ -243,6 +244,7 @@ export async function getSecondLooks(family: Family): Promise<SecondLook[]> {
       status: r.status,
       payee: r.payee,
       amountCents,
+      said: r.request_text,
       at: r.created_at,
       note: r.risk_note,
       rules: r.triggered_rules,

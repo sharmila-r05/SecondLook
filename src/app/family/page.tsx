@@ -8,7 +8,7 @@ import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
 import { sweepExpiredHolds, sweepOtherExpiredHolds } from "@/lib/bills";
 import { getCare, refreshCare } from "@/lib/care";
-import { cancelsAt, familyCard, type SecondLook } from "@/lib/copy/family";
+import { cancelsAt, familyCard, herWords, type SecondLook } from "@/lib/copy/family";
 import { ensureFamily, getSecondLooks } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
 import { requireSetUp } from "@/lib/setup-gate";
@@ -64,6 +64,11 @@ function SecondLookCard({ item, as, recent = false }: { item: SecondLook; as: "s
 
       {card.open ? (
         <>
+          {item.said.trim() && (
+            <p className={styles.said}>
+              <span className={styles.saidLabel}>Mom said:</span> &ldquo;{herWords(item.said)}&rdquo;
+            </p>
+          )}
           {item.note && <p className={styles.note}>{item.note}</p>}
           <ul className={styles.chips} aria-label="Why it was held">
             {item.rules.map((rule) => (

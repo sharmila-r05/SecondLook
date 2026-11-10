@@ -11,6 +11,8 @@ export interface SecondLook {
   status: PaymentRequestState;
   payee: string;
   amountCents: number;
+  /** What Margaret said or typed when she asked to pay it: what the payment is for, in her words. */
+  said: string;
   at: Date;
   note: string | null;
   rules: RuleHit[];
@@ -67,6 +69,18 @@ export function familyCard(item: SecondLook): FamilyCard {
     default:
       return { ...base, tone: "settled", open: false, title: `${amount} to ${item.payee}`, outcome: null };
   }
+}
+
+/**
+ * Her words as she said them, on one line and cut at a word near `max` characters, for the held card and the alert.
+ * Quoted by the caller; the words are hers, so they are never reworded.
+ */
+export function herWords(text: string, max = 240): string {
+  const words = text.replace(/\s+/g, " ").trim().replace(/^["“”']+|["“”']+$/g, "");
+  if (words.length <= max) return words;
+  const cut = words.slice(0, max + 1);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > max * 0.6 ? cut.slice(0, space) : words.slice(0, max)).replace(/[\s,;:.]+$/, "")}…`;
 }
 
 export function cancelsAt(item: SecondLook): string | null {

@@ -28,13 +28,32 @@ function pushError(statusCode: number) {
 }
 
 describe("the alert copy", () => {
-  it("tells the children what Mom is trying to pay, with no score and no blame", () => {
-    const message = holdMessage(PAYMENT, 10);
-    expect(message.title).toBe("Mom’s payment is waiting for you");
-    expect(message.body).toBe("Mom is trying to pay $1,500.00 to Tech Support Line. Tap to take a second look.");
+  it("tells the children who Mom is paying, how much, what for in her words, and why it waits, with no score", () => {
+    const message = holdMessage(
+      {
+        ...PAYMENT,
+        said: "Pay $1,500 to tech support, they said my computer is hacked",
+        rules: [{ chip: "New payee" }, { chip: "Over $300 limit" }, { chip: "Tech-support story" }],
+      },
+      10,
+    );
+    expect(message.title).toBe("Mom wants to pay $1,500.00 to Tech Support Line");
+    expect(message.body).toBe(
+      "She said: “Pay $1,500 to tech support, they said my computer is hacked”\nNew payee · Over $300 limit · Tech-support story",
+    );
     expect(`${message.title} ${message.body}`).not.toMatch(/scam|fraud|risk|score|%|!/i);
     expect(message.urgency).toBe("high");
     expect(message.ttlSeconds).toBe(600);
+  });
+
+  it("keeps a long request short enough for a lock screen, and still says who and how much without her words", () => {
+    const said = `Pay $1,500 to tech support ${"because the man on the phone said so ".repeat(8)}`;
+    const long = holdMessage({ ...PAYMENT, said, rules: [{ chip: "New payee" }] }, 10);
+    expect(long.body.length).toBeLessThan(150);
+    expect(long.body).toMatch(/^She said: “Pay \$1,500 to tech support because .*…”\nNew payee$/);
+    const bare = holdMessage(PAYMENT, 10);
+    expect(bare.title).toBe("Mom wants to pay $1,500.00 to Tech Support Line");
+    expect(bare.body).toBe("Tap to take a second look.");
   });
 
   it("says who answered, and replaces the waiting alert for the same payment", () => {
@@ -55,8 +74,8 @@ describe("the alert copy", () => {
     expect(familyPath("Sarah")).toBe("/family");
     expect(familyPath("Tom")).toBe("/family?as=tom");
     expect(JSON.parse(payloadFor(holdMessage(PAYMENT, 10), "Tom"))).toEqual({
-      title: "Mom’s payment is waiting for you",
-      body: "Mom is trying to pay $1,500.00 to Tech Support Line. Tap to take a second look.",
+      title: "Mom wants to pay $1,500.00 to Tech Support Line",
+      body: "Tap to take a second look.",
       tag: `look-${PAYMENT.id}`,
       url: "/family?as=tom",
     });

@@ -38,19 +38,31 @@ export interface BillRequest {
   payeeEmail: string | null;
   payeeKnown: boolean;
   rules: RuleHit[];
+  /** What Margaret said or typed: what the payment is for, in her words (the family's alert quotes it). */
+  said: string;
 }
 
 async function loadRequest(sql: Sql, family: Pick<Family, "id">, requestId: string): Promise<BillRequest> {
   const [row] = await sql<
-    { id: string; status: PaymentRequestState; amount_cents: string; payee: string; email: string | null; known: boolean; rules: RuleHit[] }[]
+    { id: string; status: PaymentRequestState; amount_cents: string; payee: string; email: string | null; known: boolean; rules: RuleHit[]; said: string }[]
   >`
-    select pr.id, pr.status, pr.amount_cents, p.name as payee, p.paypal_email as email, p.known, pr.triggered_rules as rules
+    select pr.id, pr.status, pr.amount_cents, p.name as payee, p.paypal_email as email, p.known, pr.triggered_rules as rules,
+           pr.request_text as said
     from payment_requests pr join payees p on p.id = pr.payee_id
     where pr.id = ${requestId} and pr.family_id = ${family.id}`;
   if (!row) throw new Error("no such payment request in this family");
   const amountCents = Number(row.amount_cents);
   assertCents(amountCents);
-  return { id: row.id, status: row.status, amountCents, payeeName: row.payee, payeeEmail: row.email, payeeKnown: row.known, rules: row.rules };
+  return {
+    id: row.id,
+    status: row.status,
+    amountCents,
+    payeeName: row.payee,
+    payeeEmail: row.email,
+    payeeKnown: row.known,
+    rules: row.rules,
+    said: row.said,
+  };
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cancelsAt, familyCard, type SecondLook } from "@/lib/copy/family";
+import { cancelsAt, familyCard, herWords, type SecondLook } from "@/lib/copy/family";
 
 // 15:41 UTC on 6 Nov 2026 is 10:41 am in New York (EST).
 const at = new Date("2026-11-06T15:41:00Z");
@@ -8,6 +8,7 @@ const held: SecondLook = {
   status: "held",
   payee: "Tech Support Line",
   amountCents: 150000,
+  said: "Pay $1,500 to tech support, they said my computer is hacked",
   at,
   note: "Tech Support Line isn’t on the family’s list.",
   rules: [{ id: "new_payee", chip: "New payee", fact: "Tech Support Line isn’t on the family’s list" }],
@@ -43,5 +44,18 @@ describe("familyCard", () => {
 
   it("has no expiry line once a hold has none", () => {
     expect(cancelsAt({ ...held, holdExpiresAt: null })).toBeNull();
+  });
+});
+
+describe("herWords", () => {
+  it("keeps her words as she said them, on one line, without the quotes around them", () => {
+    expect(herWords("  Pay the electric bill,\n  $84 ")).toBe("Pay the electric bill, $84");
+    expect(herWords("“Pay $1,500 to tech support”")).toBe("Pay $1,500 to tech support");
+  });
+
+  it("cuts a long request at a word, with an ellipsis", () => {
+    const words = herWords("Pay the man from the bank five hundred dollars today because he says my account is frozen", 40);
+    expect(words).toBe("Pay the man from the bank five hundred…");
+    expect(words.length).toBeLessThanOrEqual(41);
   });
 });

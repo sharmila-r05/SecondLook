@@ -98,6 +98,22 @@
   border-top: 1px solid rgb(26 23 32 / 0.14);
 }
 
+/* What the payment is for, in Margaret's own words: first under the rule, then the note on why it waits. */
+.said {
+  padding-top: 14px;
+  border-top: 1px solid rgb(26 23 32 / 0.14);
+  text-wrap: pretty;
+}
+
+.saidLabel {
+  font-weight: 700;
+}
+
+.said + .note {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .outcome {
   color: var(--ink-muted);
 }
