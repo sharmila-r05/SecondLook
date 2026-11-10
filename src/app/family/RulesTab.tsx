@@ -133,13 +133,24 @@ export function FamilyCard({ family, as, data, placement }: { family: Family; as
         </h2>
         <ul className={r.people}>
           {people.map((p) => (
-            <li key={p.id} className={r.person}>
+            <li key={p.id} className={r.person} data-steps={p.steps ? true : undefined}>
               <StateMark state={p.done ? "settled" : "processing"} fabric={p.fabric} />
               <div>
                 <p className={r.personName}>
                   {p.name} <span className={r.relation}>· {p.relation}</span>
                 </p>
-                <p className={r.hint}>{p.status}</p>
+                {p.steps ? (
+                  <ul className={r.steps}>
+                    {p.steps.map((step) => (
+                      <li key={step.text} className={r.step} data-done={step.done || undefined}>
+                        <StateMark state={step.done ? "settled" : "processing"} fabric={p.fabric} />
+                        <span>{step.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={r.hint}>{p.status}</p>
+                )}
               </div>
             </li>
           ))}

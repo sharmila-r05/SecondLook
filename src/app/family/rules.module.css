@@ -409,6 +409,40 @@ legend + .field {
   font-weight: 700;
 }
 
+/* Mom's steps, marked as on her invite card: filled in her teal once done, basted until then. */
+.person[data-steps] {
+  align-items: start;
+}
+
+.steps {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+
+.step svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.step[data-done] {
+  color: var(--ink);
+  font-weight: 700;
+}
+
 .relation {
   color: var(--ink-muted);
   font-weight: 400;

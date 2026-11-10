@@ -34,6 +34,11 @@ export interface PersonRow {
   /** Who they are to the person looking: "Mom", "You", "Your brother", "Mom’s aide". */
   relation: string;
   status: string;
+  /**
+   * Mom's three steps, each marked as the invite card marks them (filled in her fabric once done, basted until then),
+   * so "said yes, PayPal not connected yet" doesn't look like "hasn't opened it". Shown in place of `status`.
+   */
+  steps?: { done: boolean; text: string }[];
   /** In and ready: the row's mark is filled in their fabric; otherwise it's an open, dashed ring. */
   done: boolean;
   fabric: string;
@@ -72,12 +77,19 @@ export function peopleRows(input: {
     .map((m) => {
       const base = { id: m.id, name: m.name, relation: relationTo(viewer, m), fabric: FABRIC[m.name] ?? "var(--ink-muted)" };
       if (m.role === "parent") {
+        // She can't say yes without opening Second Look (in the demo, someone may tap her tab for her).
+        const opened = origin === "ready" || m.joinedAt !== null || parentAgreed;
+        const steps = [
+          { done: opened, text: opened ? "Opened her invite" : "Hasn’t opened her invite yet" },
+          { done: parentAgreed, text: parentAgreed ? "Said yes to Second Look" : "Hasn’t said yes yet" },
+          { done: paypalConnected, text: paypalConnected ? "Her PayPal is connected" : "Her PayPal isn’t connected yet" },
+        ];
         if (parentAgreed) {
           return paypalConnected
-            ? { ...base, status: "Said yes · PayPal connected", done: true }
-            : { ...base, status: "Said yes · PayPal not connected yet", done: false };
+            ? { ...base, status: "Said yes · PayPal connected", steps, done: true }
+            : { ...base, status: "Said yes · PayPal not connected yet", steps, done: false };
         }
-        return { ...base, status: m.joinedAt ? "Opened her invite, hasn’t said yes yet" : "Hasn’t opened her invite yet", done: false };
+        return { ...base, status: m.joinedAt ? "Opened her invite, hasn’t said yes yet" : "Hasn’t opened her invite yet", steps, done: false };
       }
       if (m.id === organizerId) return { ...base, status: "Set up the family", done: true };
       if (origin === "ready" || m.joinedAt) return { ...base, status: "Joined", done: true };

@@ -78,6 +78,21 @@ describe("peopleRows", () => {
     expect(peopleRows({ ...base, parentAgreed: true, paypalConnected: true })[0]).toMatchObject({ status: "Said yes · PayPal connected", done: true });
   });
 
+  it("marks each of Mom's steps, so saying yes without PayPal doesn't read like not opening the invite", () => {
+    const marks = (input: Partial<typeof base>) => peopleRows({ ...base, ...input })[0]?.steps?.map((s) => s.done);
+    expect(marks({})).toEqual([false, false, false]);
+    expect(marks({ members: members.map((m) => ({ ...m, joinedAt: new Date() })) })).toEqual([true, false, false]);
+    expect(marks({ parentAgreed: true })).toEqual([true, true, false]);
+    expect(marks({ paypalConnected: true })).toEqual([false, false, true]);
+    expect(marks({ parentAgreed: true, paypalConnected: true })).toEqual([true, true, true]);
+    expect(peopleRows({ ...base, parentAgreed: true })[0]?.steps?.map((s) => s.text)).toEqual([
+      "Opened her invite",
+      "Said yes to Second Look",
+      "Her PayPal isn’t connected yet",
+    ]);
+    expect(peopleRows(base).find((r) => r.name === "Rosa")?.steps).toBeUndefined();
+  });
+
   it("counts everyone in the ready-made family as joined", () => {
     const rows = peopleRows({ ...base, origin: "ready", organizerId: "s", viewer: "Tom", parentAgreed: true, paypalConnected: true });
     expect(rows.map((r) => [r.relation, r.status])).toEqual([
