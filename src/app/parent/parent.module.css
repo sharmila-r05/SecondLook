@@ -337,6 +337,44 @@
     min-height: 88px;
     font-size: 1.75rem;
   }
+
+  /* Her agreement on a phone: the heading, the three sentences and the yes all in the first screen (390 x 844), so
+     she never has to find the button. Rows a little tighter and their text one step down (20px, still AAA's large
+     size on her screen); no rule under the heading. */
+  .layout[data-agree] .today {
+    padding: 20px 14px 14px;
+  }
+
+  .layout[data-agree] .heading {
+    margin-bottom: 14px;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .layout[data-agree] .entries {
+    gap: 10px;
+  }
+
+  .layout[data-agree] .statement {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 4px 12px;
+    padding: 14px 16px;
+    font-size: 1.25rem;
+  }
+
+  .layout[data-agree] .lineIcon {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* The yes takes the rest of the screen under the panel, as it stands beside the panel full height on her tablet. */
+  .layout[data-agree] {
+    grid-template-rows: auto minmax(136px, 1fr);
+  }
+
+  .layout[data-agree] .agreeButton {
+    min-height: 136px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
