@@ -351,6 +351,40 @@ export async function releaseHold(family: Pick<Family, "id">, sessionId: string,
 }
 
 /**
+ * Before Reset or Start over deletes a session's payments: void every hold PayPal still has open for them (placed,
+ * never captured), so a visitor's abandoned $1,500 never stays held on demo Margaret's PayPal until PayPal's own
+ * 29-day expiry, out of reach of the sweeps once its rows are gone. Best effort: the reset goes ahead if PayPal is down.
+ */
+export async function releaseOpenHolds(sessionId: string): Promise<void> {
+  const sql = db();
+  const open = await sql<{ id: string; family_id: string; request_id: string; authorization_id: string; amount_cents: string }[]>`
+    select a.id, a.family_id, a.payment_request_id as request_id, a.paypal_authorization_id as authorization_id, a.amount_cents
+    from payments a
+    where a.demo_session_id = ${sessionId} and a.kind = 'authorization' and a.paypal_authorization_id is not null
+      and a.status not in ('VOIDED', 'CAPTURED')
+      and not exists (select 1 from payments c where c.payment_request_id = a.payment_request_id and c.kind = 'capture' and c.status = 'COMPLETED')`;
+  for (const hold of open) {
+    try {
+      // Hard rule 4: the void's request id is stored on its own row before the call, as releaseHold does.
+      let [row] = await sql<{ id: string; paypal_request_id: string; status: string }[]>`
+        select id, paypal_request_id, status from payments where payment_request_id = ${hold.request_id} and kind = 'void'
+        order by created_at limit 1`;
+      if (!row) {
+        [row] = await sql<{ id: string; paypal_request_id: string; status: string }[]>`
+          insert into payments (demo_session_id, family_id, payment_request_id, kind, paypal_request_id, paypal_authorization_id, amount_cents, status)
+          values (${sessionId}, ${hold.family_id}, ${hold.request_id}, 'void', ${randomUUID()}, ${hold.authorization_id}, ${hold.amount_cents}, 'voiding')
+          returning id, paypal_request_id, status`;
+      }
+      if (!row || row.status === "VOIDED") continue;
+      await voidAuthorization({ authorizationId: hold.authorization_id, requestId: row.paypal_request_id });
+      await sql`update payments set status = 'VOIDED' where id in (${row.id}, ${hold.id})`;
+    } catch (err) {
+      console.error("voiding a hold before a reset failed:", explain(err));
+    }
+  }
+}
+
+/**
  * Whether PayPal placed this bill's hold. After a failure, a placed hold is finished by the next look (paid, or sent
  * to family), so Margaret mustn't be told nothing was paid and asked to try again: trying again would pay twice.
  */

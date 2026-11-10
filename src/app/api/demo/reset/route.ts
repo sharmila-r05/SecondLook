@@ -1,3 +1,4 @@
+import { releaseOpenHolds } from "@/lib/bills";
 import { deviceLock } from "@/lib/device-lock";
 import { resetFamily } from "@/lib/family";
 import { seeOther } from "@/lib/redirect";
@@ -11,7 +12,10 @@ export async function POST(request: Request) {
   // Mom's tablet and Rosa's phone in a family someone set up have no Reset (lib/device-lock).
   const locked = await deviceLock();
   if (locked) return seeOther(screenOf(locked));
-  await resetFamily(await getSessionId());
+  const sessionId = await getSessionId();
+  // PayPal holds first: once the rows are gone, nothing could void them.
+  await releaseOpenHolds(sessionId);
+  await resetFamily(sessionId);
 
   // Only the referer's path is kept, so the redirect stays on this site whatever host the proxy reports.
   let back = "/parent";

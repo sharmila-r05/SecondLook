@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { getAccount, rememberPerson } from "@/lib/account";
+import { releaseOpenHolds } from "@/lib/bills";
 import { db } from "@/lib/db";
 import { recordEvent } from "@/lib/events";
 import { type Family, findFamily, startSetupFamily } from "@/lib/family";
@@ -36,6 +37,8 @@ export async function chooseOrganizer(form: FormData): Promise<void> {
   const setUpBy = current?.settings.origin === "setup" ? current.members.find((m) => m.id === current.settings.organizerId)?.name : undefined;
   if (setUpBy && setUpBy !== account.person) redirect("/api/account/home");
   const organizer = form.get("person") === "Tom" ? "Tom" : "Sarah";
+  // PayPal holds first: starting over deletes the family's payments, and nothing could void them after.
+  await releaseOpenHolds(sessionId);
   const family = await startSetupFamily(sessionId, organizer, account.id);
   await rememberPerson(organizer);
   await recordEvent(db(), family, sessionId, "family:setup_started", { by: organizer });
