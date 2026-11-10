@@ -32,6 +32,8 @@ export const RULES_COPY = {
     label: "Always, whatever the amount",
     help: "Anyone Mom hasn’t paid before, and anything she says that sounds like one of these. They can’t be switched off.",
     chips: "Words that always get a second look",
+    claude:
+      "Claude also reads what she says for a scam story told in other words, like a call threatening to cut off her power tonight. Claude can add a second look, never remove one.",
   },
   ask: { label: "Who gets asked" },
   hold: {

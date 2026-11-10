@@ -73,6 +73,7 @@ export function RulesTab({ family, as, data }: { family: Family; as: Viewer; dat
                 </li>
               ))}
             </ul>
+            <p className={r.hint}>{RULES_COPY.always.claude}</p>
           </div>
         </RulesForm>
       </section>

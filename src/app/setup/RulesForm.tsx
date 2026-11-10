@@ -104,6 +104,7 @@ export function RulesForm({
               </li>
             ))}
           </ul>
+          <p className={styles.help}>{RULES_COPY.always.claude}</p>
         </div>
       </div>
 
