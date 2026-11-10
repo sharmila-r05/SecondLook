@@ -34,13 +34,13 @@ export async function decide(formData: FormData): Promise<void> {
     after(() => notifyChildren(family, sessionId, decidedMessage(bill, member.name, decision), { except: member.id }));
   try {
     if (decision === "approve") {
-      if (await moveRequest(sql, requestId, "held", "approved_by_family", { decidedBy: member.id })) {
+      if (await moveRequest(sql, family, requestId, "held", "approved_by_family", { decidedBy: member.id })) {
         await recordEvent(sql, family, sessionId, "request:approved", { requestId, by: member.name });
         const bill = await loadRequest(sql, family, requestId);
         tellTheOther(bill);
         await captureAndPay(family, sessionId, bill);
       }
-    } else if (await moveRequest(sql, requestId, "held", "denied", { decidedBy: member.id })) {
+    } else if (await moveRequest(sql, family, requestId, "held", "denied", { decidedBy: member.id })) {
       await recordEvent(sql, family, sessionId, "request:denied", { requestId, by: member.name });
       const bill = await loadRequest(sql, family, requestId);
       tellTheOther(bill);

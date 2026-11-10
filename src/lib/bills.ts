@@ -53,9 +53,13 @@ async function loadRequest(sql: Sql, family: Pick<Family, "id">, requestId: stri
   return { id: row.id, status: row.status, amountCents, payeeName: row.payee, payeeEmail: row.email, payeeKnown: row.known, rules: row.rules };
 }
 
-/** Moves a request between states through the one state machine; false when another writer got there first. */
+/**
+ * Moves one of this family's requests between states through the one state machine; false when another writer got
+ * there first, or the request isn't this family's.
+ */
 export async function moveRequest(
   sql: Sql,
+  family: Pick<Family, "id">,
   requestId: string,
   from: PaymentRequestState,
   to: PaymentRequestState,
@@ -70,7 +74,7 @@ export async function moveRequest(
       hold_expires_at = case when ${extra.holdMinutes ?? null}::int is null then hold_expires_at
                              else now() + make_interval(mins => ${extra.holdMinutes ?? 0}::int) end,
       risk_note = coalesce(${extra.riskNote ?? null}, risk_note)
-    where id = ${requestId} and status = ${from}
+    where id = ${requestId} and family_id = ${family.id} and status = ${from}
     returning id`;
   return moved.length > 0;
 }
@@ -236,12 +240,12 @@ export async function settleBill(
   const bill = await loadRequest(sql, family, requestId);
   if (bill.status === "new") {
     if (bill.rules.length === 0) {
-      if (await moveRequest(sql, requestId, "new", "approved_auto")) {
+      if (await moveRequest(sql, family, requestId, "new", "approved_auto")) {
         await recordEvent(sql, family, sessionId, "request:approved_auto", { requestId, payee: bill.payeeName, amountCents: bill.amountCents });
       }
     } else {
       const note = await riskNote(bill);
-      if (await moveRequest(sql, requestId, "new", "held", { holdMinutes, riskNote: note })) {
+      if (await moveRequest(sql, family, requestId, "new", "held", { holdMinutes, riskNote: note })) {
         await recordEvent(sql, family, sessionId, "request:held", { requestId, payee: bill.payeeName, amountCents: bill.amountCents, note });
       }
     }
@@ -305,7 +309,7 @@ export async function captureAndPay(family: Pick<Family, "id">, sessionId: strin
   }
 
   const from = bill.status;
-  if (await moveRequest(sql, bill.id, from, "paid")) {
+  if (await moveRequest(sql, family, bill.id, from, "paid")) {
     await recordEvent(sql, family, sessionId, "request:paid", { requestId: bill.id, payee: bill.payeeName, amountCents: bill.amountCents });
   }
 }
@@ -331,7 +335,7 @@ export async function releaseHold(family: Pick<Family, "id">, sessionId: string,
       await recordEvent(sql, family, sessionId, "paypal:voided", { requestId: bill.id, authorizationId: hold.paypal_authorization_id, amountCents: bill.amountCents });
     }
   }
-  await moveRequest(sql, bill.id, bill.status, "voided");
+  await moveRequest(sql, family, bill.id, bill.status, "voided");
 }
 
 /** Margaret backed out on PayPal's page: nothing was authorized, so the request simply goes away. */
@@ -357,7 +361,7 @@ export async function sweepExpiredHolds(family: Pick<Family, "id" | "settings">,
     select id from payment_requests
     where family_id = ${family.id} and status = 'held' and hold_expires_at < now()`;
   for (const { id } of due) {
-    if (await moveRequest(sql, id, "held", "expired")) await recordEvent(sql, family, sessionId, "request:expired", { requestId: id });
+    if (await moveRequest(sql, family, id, "held", "expired")) await recordEvent(sql, family, sessionId, "request:expired", { requestId: id });
   }
   // A hold placed but never decided (the decision step failed after PayPal authorized): decide it now, so Margaret's
   // money isn't left held with no one asked. A minute's grace leaves the normal path time to finish first.
@@ -429,7 +433,7 @@ export async function sweepOtherExpiredHolds(limit = 5): Promise<void> {
   for (const row of due) {
     const family = { id: row.family_id };
     try {
-      if (row.status === "held" && (await moveRequest(sql, row.id, "held", "expired"))) {
+      if (row.status === "held" && (await moveRequest(sql, family, row.id, "held", "expired"))) {
         await recordEvent(sql, family, row.demo_session_id, "request:expired", { requestId: row.id });
       }
       await releaseHold(family, row.demo_session_id, await loadRequest(sql, family, row.id));

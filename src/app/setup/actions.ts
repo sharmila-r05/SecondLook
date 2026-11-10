@@ -31,6 +31,10 @@ export async function chooseOrganizer(form: FormData): Promise<void> {
   if (!account) redirect("/signin");
   const sessionId = await getSessionId();
   if (account.sessionId !== sessionId) redirect("/api/account/home");
+  // Starting over replaces the whole family, so once someone has set one up, only they can (not a sibling who signed in).
+  const current = await findFamily(sessionId);
+  const setUpBy = current?.settings.origin === "setup" ? current.members.find((m) => m.id === current.settings.organizerId)?.name : undefined;
+  if (setUpBy && setUpBy !== account.person) redirect("/api/account/home");
   const organizer = form.get("person") === "Tom" ? "Tom" : "Sarah";
   const family = await startSetupFamily(sessionId, organizer, account.id);
   await rememberPerson(organizer);
