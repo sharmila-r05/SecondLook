@@ -127,7 +127,7 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
   const back = (to: SetupStep) => ({ href: `/setup?step=${to}`, label: to === "bills" ? "Back to Mom’s bills" : "Back to the rules" });
 
   return (
-    <SetupShell startOver>
+    <SetupShell startOver={organizer}>
       <div className={styles.stage}>
         <Progress steps={progressSteps(family, bills, reached, null)} here={step} organizer={organizer} />
         <div className={styles.panel}>
