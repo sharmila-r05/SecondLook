@@ -17,14 +17,35 @@ function useCanShare(): boolean {
 
 type Copied = "idle" | "copied" | "failed";
 
+/** "secondlook.example" and "/join/abc123": the site and the person's own part, without the "https://". */
+function splitLink(url: string): { site: string; path: string } {
+  try {
+    const link = new URL(url);
+    return { site: link.host, path: `${link.pathname}${link.search}` };
+  } catch {
+    return { site: "", path: url };
+  }
+}
+
 /** One person's invite link, with Copy and Share. The link itself stays visible so it can be read out or typed. */
 export function InviteShare({ url, name, message }: { url: string; name: string; message: string }) {
   const canShare = useCanShare();
   const [copied, setCopied] = useState<Copied>("idle");
+  const { site, path } = splitLink(url);
   const linkRef = useRef<HTMLParagraphElement>(null);
   const timer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  // No clipboard here (an insecure page, or the browser said no): once the whole link is showing, select it so it can
+  // be copied by hand.
+  useEffect(() => {
+    if (copied !== "failed" || !linkRef.current) return;
+    const range = document.createRange();
+    range.selectNodeContents(linkRef.current);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(range);
+  }, [copied]);
 
   function settle(next: Copied) {
     setCopied(next);
@@ -37,11 +58,6 @@ export function InviteShare({ url, name, message }: { url: string; name: string;
       await navigator.clipboard.writeText(url);
       settle("copied");
     } catch {
-      // No clipboard here (an insecure page, or the browser said no): select the link so it can be copied by hand.
-      const range = document.createRange();
-      if (linkRef.current) range.selectNodeContents(linkRef.current);
-      window.getSelection()?.removeAllRanges();
-      window.getSelection()?.addRange(range);
       settle("failed");
     }
   }
@@ -59,8 +75,27 @@ export function InviteShare({ url, name, message }: { url: string; name: string;
 
   return (
     <div className={styles.share}>
-      <p ref={linkRef} className={styles.url}>
-        {url}
+      {/* One line, never broken mid-code: the site's name gives way to an ellipsis first, so the person's own code at the
+          end stays readable; Copy carries the whole link. If copying fails, the whole link opens out, selected. */}
+      <p
+        ref={linkRef}
+        className={styles.url}
+        title={url}
+        data-full={copied === "failed" || undefined}
+        // Copied by hand from here, it's still the whole link, on one line.
+        onCopy={(event) => {
+          event.preventDefault();
+          event.clipboardData.setData("text/plain", url);
+        }}
+      >
+        {copied === "failed" ? (
+          url
+        ) : (
+          <>
+            <span className={styles.urlSite}>{site}</span>
+            <span className={styles.urlPath}>{path}</span>
+          </>
+        )}
       </p>
       <div className={styles.buttons}>
         <button type="button" className={styles.button} onClick={copy}>

@@ -142,12 +142,33 @@
   min-width: 0;
 }
 
+/* The link on one line, never broken mid-code: in a narrow card the site's name gives way to an ellipsis, and the
+   person's own part ("/join/…") always shows whole. Copy link carries all of it. */
 .url {
+  display: flex;
+  overflow: hidden;
+  min-width: 0;
   color: var(--ink);
   font-size: 0.9375rem;
   line-height: 1.35;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
   user-select: all;
+}
+
+.urlSite {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+.urlPath {
+  flex: none;
+}
+
+.url[data-full] {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .buttons {

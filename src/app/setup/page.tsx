@@ -303,11 +303,11 @@ function Invites({ family, organizer, devices, steps }: { family: Family; organi
           {canSkip && (
             <form action={skipToDemoPayPal} className={styles.demoSkip}>
               <p>
-                <strong>Demo only.</strong> No sandbox login for Margaret&rsquo;s PayPal? Use the PayPal this demo already has saved for
-                her instead. She still says yes on her tablet.
+                <strong>Demo only.</strong> No sandbox login for Margaret&rsquo;s PayPal? Use the one this demo already has saved for her,
+                instead of her PayPal page. She still says yes on her tablet.
               </p>
               <PendingButton className={styles.secondary} pending="Connecting…">
-                Skip Mom&rsquo;s PayPal login
+                Use the demo&rsquo;s saved PayPal
               </PendingButton>
             </form>
           )}

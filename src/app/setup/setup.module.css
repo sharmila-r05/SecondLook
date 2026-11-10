@@ -807,23 +807,24 @@ a.step:hover {
   line-height: 1.25;
 }
 
+/* Demo only, in Mom's invite card: dashed like the bar's Reset, its one button the box's full width on one line. */
 .demoSkip {
   display: grid;
   gap: 12px;
-  justify-items: start;
   margin: 0;
-  padding: 16px;
+  padding: 14px 12px 12px;
   border: 2px dashed var(--stitch);
   border-radius: var(--radius-row);
 }
 
 .demoSkip p {
+  padding: 0 2px;
   font-size: 0.9375rem;
 }
 
 .demoSkip .secondary {
   width: 100%;
-  padding: 8px 14px;
+  padding: 6px 12px;
   text-wrap: balance;
 }
 
@@ -1036,6 +1037,11 @@ a.step:hover {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: stretch;
     gap: 10px;
+  }
+
+  /* While Mom's card also carries the demo-only box, it takes a wider column so the box's button stays on one line. */
+  .wide .invites:has(.demoSkip) {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .wide .alerts {
