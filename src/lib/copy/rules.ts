@@ -46,6 +46,10 @@ export const RULES_COPY = {
 /** The daily limit can't be below one payment's: said under the daily choices, with the limit it must meet. */
 export const dailyFloor = (limitCents: number) => `Not below the limit for one payment: ${dollars(limitCents)} or more.`;
 
+/** The lowest day's limit that goes with a one-payment limit: where the day's limit is raised to when it falls behind. */
+export const lowestDaily = (limitCents: number): number =>
+  CHOICES.dailyLimitCents.find((c) => c >= limitCents) ?? Math.max(...CHOICES.dailyLimitCents);
+
 /** "Rosa’s pay per visit" (the Rules tab sets her name in her sage, then the rest). */
 export const RATE_AFTER_NAME = "’s pay per visit";
 export const rateLabel = (aide: string) => `${aide}${RATE_AFTER_NAME}`;

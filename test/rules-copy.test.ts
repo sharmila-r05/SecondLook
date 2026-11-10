@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { amountText, peopleRows, type PersonInput, refusal } from "@/app/family/rules-copy";
-import { ALWAYS_WORDS, askChoices, dollars, shareName, shareWords, timesWords, waitWords } from "@/lib/copy/rules";
+import { ALWAYS_WORDS, askChoices, dollars, lowestDaily, shareName, shareWords, timesWords, waitWords } from "@/lib/copy/rules";
 import { evaluate } from "@/lib/risk";
 import { CHOICES, USUAL_AMOUNT_RANGE, VISIT_RATE_RANGE } from "@/lib/settings";
 
@@ -19,6 +19,12 @@ describe("the rules' choices, as setup and the Rules tab both name them", () => 
     const labels = (viewer: string) => askChoices({ viewer, organizer: "Tom", sibling: "Sarah" }).map((c) => c.label);
     expect(labels("Tom")).toEqual(["Sarah and me", "Just me"]);
     expect(labels("Sarah")).toEqual(["Tom and me", "Just Tom"]);
+  });
+
+  it("raises a day's limit to the lowest choice that isn't below one payment's", () => {
+    expect(CHOICES.limitCents.map(lowestDaily)).toEqual([30_000, 30_000, 30_000, 50_000, 100_000]);
+    // Every one-payment limit has a day's limit that goes with it.
+    for (const limit of CHOICES.limitCents) expect(lowestDaily(limit)).toBeGreaterThanOrEqual(limit);
   });
 });
 

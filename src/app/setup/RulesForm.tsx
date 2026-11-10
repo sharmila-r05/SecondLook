@@ -1,11 +1,11 @@
 "use client";
 
 import { Info } from "lucide-react";
-import { useActionState, useState } from "react";
-import { ALWAYS_WORDS, askChoices, dollars, RULES_COPY, timesWords, waitWords } from "@/lib/copy/rules";
+import { type FormEvent, startTransition, useActionState, useState } from "react";
+import { ALWAYS_WORDS, askChoices, dailyFloor, dollars, lowestDaily, RULES_COPY, timesWords, waitWords } from "@/lib/copy/rules";
 import { CHOICES, type Rules } from "@/lib/settings";
 import { saveRulesStep, type StepState } from "./actions";
-import { ChoiceGroup, SubmitRow } from "./fields";
+import { ChoiceGroup, FormError, SubmitRow } from "./fields";
 import styles from "./setup.module.css";
 
 /** Step 2: what sends Mom's payment for a second look, who is asked, and how long it waits. */
@@ -23,12 +23,33 @@ export function RulesForm({
   const [state, action, pending] = useActionState<StepState, FormData>(saveRulesStep, {});
   const [limit, setLimit] = useState(initial.limitCents);
   const [daily, setDaily] = useState(initial.dailyLimitCents);
+  const [raised, setRaised] = useState(false);
   const [multiple, setMultiple] = useState(initial.unusualMultiple);
   const [hold, setHold] = useState(initial.holdMinutes);
   const [ask, setAsk] = useState<Rules["ask"]>(initial.ask);
 
+  // A day's limit can't be below one payment's, so it can't be picked that way: raising the one-payment limit past it
+  // raises the day's limit to match, and the day's answers below the limit are passed over.
+  const chooseLimit = (next: number) => {
+    setLimit(next);
+    const floor = lowestDaily(next);
+    setRaised(daily < floor);
+    if (daily < floor) setDaily(floor);
+  };
+  const someUnavailable = CHOICES.dailyLimitCents.some((c) => c < limit);
+  // The server checks the pair again; if it still refuses, its reason sits with the day's limit, not by Save.
+  const dailyError = !pending && state.error?.startsWith("The daily limit") ? state.error : undefined;
+
+  // Sent by hand so a refused save leaves every answer as chosen (a plain form action resets the form after it runs,
+  // which would put the patches out of step with what's chosen). Without script, the form still posts to the action.
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    startTransition(() => action(data));
+  };
+
   return (
-    <form action={action} className={styles.form}>
+    <form action={action} onSubmit={submit} className={styles.form}>
       <div className={styles.section}>
         <ChoiceGroup
           name="limitCents"
@@ -36,23 +57,32 @@ export function RulesForm({
           help={RULES_COPY.limit.help}
           choices={CHOICES.limitCents.map((c) => ({ value: c, label: dollars(c) }))}
           value={limit}
-          onChange={setLimit}
+          onChange={chooseLimit}
         />
 
         <ChoiceGroup
           name="dailyLimitCents"
           legend={RULES_COPY.daily.label}
           help={RULES_COPY.daily.help}
-          choices={CHOICES.dailyLimitCents.map((c) => ({ value: c, label: dollars(c) }))}
+          choices={CHOICES.dailyLimitCents.map((c) => ({ value: c, label: dollars(c), unavailable: c < limit }))}
           value={daily}
-          onChange={setDaily}
+          onChange={(next) => {
+            setDaily(next);
+            setRaised(false);
+          }}
+          unavailableNote="daily-floor"
+          describedBy={dailyError ? "daily-error" : undefined}
         >
-          {daily < limit && (
-            <p className={styles.warning} role="status">
+          {someUnavailable && (
+            <p id="daily-floor" className={styles.warning}>
               <Info aria-hidden="true" />
-              <span>This is below the limit for one payment. Pick {dollars(limit)} or more.</span>
+              <span>{raised ? `Raised to ${dollars(daily)} to match one payment.` : dailyFloor(limit)}</span>
             </p>
           )}
+          <p className="visually-hidden" aria-live="polite">
+            {raised ? `${RULES_COPY.daily.label} raised to ${dollars(daily)}, to match one payment.` : ""}
+          </p>
+          <FormError id="daily-error" error={dailyError} />
         </ChoiceGroup>
 
         <ChoiceGroup
@@ -99,7 +129,13 @@ export function RulesForm({
         />
       </div>
 
-      <SubmitRow pending={pending} label="Save and continue" pendingLabel="Saving…" error={state.error} back={back} />
+      <SubmitRow
+        pending={pending}
+        label="Save and continue"
+        pendingLabel="Saving…"
+        error={dailyError ? "Nothing was saved yet: the limit for a day needs changing, above" : state.error}
+        back={back}
+      />
     </form>
   );
 }

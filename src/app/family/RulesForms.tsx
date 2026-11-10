@@ -1,9 +1,9 @@
 "use client";
 
-import { type CSSProperties, type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
+import { type ChangeEvent, type CSSProperties, type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
 import { FormError } from "@/components/form/FormError";
 import { StateMark } from "@/components/quilt/StateMark";
-import { askChoices, dollars, RATE_AFTER_NAME, RULES_COPY, rateRange, SHARES, shareWords, splitLabel, timesWords, waitWords } from "@/lib/copy/rules";
+import { askChoices, dailyFloor, dollars, lowestDaily, RATE_AFTER_NAME, RULES_COPY, rateRange, SHARES, shareWords, splitLabel, timesWords, waitWords } from "@/lib/copy/rules";
 import { CHOICES, USUAL_AMOUNT_RANGE, VISIT_RATE_RANGE } from "@/lib/settings";
 import { amountText, refusal } from "./rules-copy";
 import { changeBills, changeCare, changeRules, type RulesState } from "./rules-actions";
@@ -39,6 +39,7 @@ function SaveRow({
   save,
   as,
   range,
+  errorId,
 }: {
   label: string;
   note: string;
@@ -46,13 +47,19 @@ function SaveRow({
   as: Viewer;
   /** The range a typed amount in this form must be in, to say so if one isn't. */
   range?: { minCents: number; maxCents: number };
+  /** So a field the refusal is about can point at it. */
+  errorId?: string;
 }) {
   const { state, pending, changed } = save;
   const refused = Boolean(state.error) && !pending;
   const saved = Boolean(state.saved) && !changed && !pending;
   return (
     <div className={r.saveRow}>
-      {refused && state.error && <FormError>{refusal(state.error, range)} Nothing was changed.</FormError>}
+      {refused && state.error && (
+        <FormError id={errorId}>
+          {refusal(state.error, range)} Nothing was changed.
+        </FormError>
+      )}
       <div className={r.saveLine}>
         <button type="submit" className={changed || refused || pending ? r.saveReady : r.save} disabled={pending} aria-busy={pending || undefined}>
           {pending ? "Saving…" : label}
@@ -70,30 +77,40 @@ function SaveRow({
   );
 }
 
-function Choice<T extends string | number>({
+function Choice<T extends number>({
   name,
   label,
   hint,
   value,
+  onChange,
   options,
   words,
+  unavailable,
+  describedBy,
 }: {
   name: string;
   label: string;
   hint?: string;
   value: T;
+  /** Given when another field depends on this one's answer: the choice is then held by the form. */
+  onChange?: (value: T) => void;
   options: readonly T[];
   words: (v: T) => string;
+  /** Answers that can't go with the rest of the form as it stands: shown, dimmed, and not choosable. */
+  unavailable?: (v: T) => boolean;
+  /** More to read with the choice, such as why a save was refused. */
+  describedBy?: string;
 }) {
   const id = `rule-${name}`;
+  const held = onChange ? { value: String(value), onChange: (e: ChangeEvent<HTMLSelectElement>) => onChange(Number(e.currentTarget.value) as T) } : { defaultValue: String(value) };
   return (
     <div className={r.field}>
       <label htmlFor={id} className={r.label}>
         {label}
       </label>
-      <select id={id} name={name} defaultValue={String(value)} className={r.select} aria-describedby={hint ? `${id}-hint` : undefined}>
+      <select id={id} name={name} {...held} className={r.select} aria-describedby={[hint ? `${id}-hint` : "", describedBy ?? ""].join(" ").trim() || undefined}>
         {options.map((o) => (
-          <option key={o} value={String(o)}>
+          <option key={o} value={String(o)} disabled={unavailable?.(o)}>
             {words(o)}
           </option>
         ))}
@@ -132,18 +149,38 @@ export function RulesForm({
 }) {
   const save = useSave(changeRules);
   const viewer = as === "tom" ? "Tom" : "Sarah";
+  const [limit, setLimit] = useState(values.limitCents);
+  const [daily, setDaily] = useState(values.dailyLimitCents);
+  // A day's limit can't be below one payment's: raising the one-payment limit past it raises the day's to match, and
+  // the day's answers below it can't be picked. If the server still refuses the pair, the day's limit points at why.
+  const chooseLimit = (next: number) => {
+    setLimit(next);
+    setDaily((current) => Math.max(current, lowestDaily(next)));
+  };
+  const dailyRefused = !save.pending && Boolean(save.state.error?.startsWith("The daily limit"));
   return (
     <form {...save.form} className={r.form}>
       <input type="hidden" name="as" value={as} />
       <fieldset className={r.group}>
         <legend className="visually-hidden">A payment gets a second look when</legend>
-        <Choice name="limitCents" label={RULES_COPY.limit.label} value={values.limitCents} options={CHOICES.limitCents} words={dollars} />
+        <Choice
+          name="limitCents"
+          label={RULES_COPY.limit.label}
+          value={limit}
+          onChange={chooseLimit}
+          options={CHOICES.limitCents}
+          words={dollars}
+        />
         <Choice
           name="dailyLimitCents"
           label={RULES_COPY.daily.label}
-          value={values.dailyLimitCents}
+          hint={dailyFloor(limit)}
+          value={daily}
+          onChange={setDaily}
           options={CHOICES.dailyLimitCents}
           words={dollars}
+          unavailable={(c) => c < limit}
+          describedBy={dailyRefused ? "rules-save-error" : undefined}
         />
         <Choice
           name="unusualMultiple"
@@ -178,7 +215,7 @@ export function RulesForm({
         />
       </fieldset>
 
-      <SaveRow label="Save the rules" note="Changes apply from Mom’s next payment." save={save} as={as} />
+      <SaveRow label="Save the rules" note="Changes apply from Mom’s next payment." save={save} as={as} errorId="rules-save-error" />
     </form>
   );
 }

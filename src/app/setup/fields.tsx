@@ -15,6 +15,8 @@ export interface Choice<T extends string | number> {
   detail?: ReactNode;
   /** The spoken name when the label is terse ("60 / 40"). */
   name?: string;
+  /** Can't go with the other answers as they stand (a day's limit below one payment's): faded, and passed over. */
+  unavailable?: boolean;
 }
 
 /** One question with a short list of answers: radio buttons drawn as small solid patches, the chosen one in plum. */
@@ -28,6 +30,8 @@ export function ChoiceGroup<T extends string | number>({
   rows = false,
   optionClass,
   listClass,
+  describedBy,
+  unavailableNote,
   children,
 }: {
   name: string;
@@ -41,11 +45,15 @@ export function ChoiceGroup<T extends string | number>({
   optionClass?: string;
   /** Overrides the row of patches' layout (the split's seven answers wrap on a phone). */
   listClass?: string;
+  /** More about the whole group, such as the server's reason a save was refused. */
+  describedBy?: string;
+  /** The id of the sentence saying why some answers can't be chosen; each of those answers points at it. */
+  unavailableNote?: string;
   children?: ReactNode;
 }) {
   const helpId = useId();
   return (
-    <fieldset className={styles.group}>
+    <fieldset className={styles.group} aria-describedby={describedBy}>
       <legend className={styles.legend}>{legend}</legend>
       {help && (
         <p id={helpId} className={styles.help}>
@@ -57,16 +65,25 @@ export function ChoiceGroup<T extends string | number>({
         style={rows ? undefined : ({ "--count": choices.length } as CSSProperties)}
       >
         {choices.map((choice) => (
-          <label key={String(choice.value)} className={optionClass ? `${styles.option} ${optionClass}` : styles.option}>
+          <label
+            key={String(choice.value)}
+            className={optionClass ? `${styles.option} ${optionClass}` : styles.option}
+            data-unavailable={choice.unavailable || undefined}
+          >
             <input
               type="radio"
               className={styles.radio}
               name={name}
               value={String(choice.value)}
               checked={value === choice.value}
-              onChange={() => onChange(choice.value)}
+              onChange={() => {
+                if (!choice.unavailable) onChange(choice.value);
+              }}
+              // Still found and read out, but a tap or an arrow key leaves the chosen answer where it was.
+              onClick={choice.unavailable ? (event) => event.preventDefault() : undefined}
+              aria-disabled={choice.unavailable || undefined}
               aria-label={choice.name}
-              aria-describedby={help ? helpId : undefined}
+              aria-describedby={[help ? helpId : "", choice.unavailable ? (unavailableNote ?? "") : ""].join(" ").trim() || undefined}
             />
             {rows ? (
               <>
