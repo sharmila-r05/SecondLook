@@ -26,7 +26,7 @@ services:
       - key: HOLD_TIMEOUT_MINUTES
         value: "10"
       - key: SESSION_LLM_CALLS_CAP
-        value: "20"
+        value: "60"
       - key: DAILY_LLM_CALLS_CAP
         value: "200"
       - key: PAYPAL_CLIENT_ID

@@ -12,7 +12,7 @@ function positiveInt(value: string | undefined, fallback: number): number {
 }
 
 export const LLM_CAPS = {
-  perSession: positiveInt(process.env.SESSION_LLM_CALLS_CAP, 20),
+  perSession: positiveInt(process.env.SESSION_LLM_CALLS_CAP, 60),
   perDay: positiveInt(process.env.DAILY_LLM_CALLS_CAP, 200),
 };
 
