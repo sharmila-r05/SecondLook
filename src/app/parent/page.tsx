@@ -6,6 +6,7 @@ import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
 import { sweepExpiredHolds, sweepOtherExpiredHolds } from "@/lib/bills";
 import { type AgreementCopy, agreementCopy, CONNECT_COPY, orderForParent, parentLine } from "@/lib/copy/parent";
+import { keepDeviceTo } from "@/lib/device-lock";
 import { ensureFamily, type Family, getParentDay, memberNamed, organizerOf } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
 import { formatDay } from "@/lib/time";
@@ -21,7 +22,7 @@ const LINE_ICONS: Record<AgreementCopy["lines"][number]["key"], typeof Wallet> =
  * A family just set up: before anything else, who set Second Look up with Margaret, what it does in three plain
  * sentences, and one large yes in place of her two action blocks. Pay and "Rosa came today" open once she agrees.
  */
-function Agreement({ family }: { family: Family }) {
+function Agreement({ family, locked }: { family: Family; locked: boolean }) {
   const organizer = organizerOf(family);
   const copy = agreementCopy({
     organizer: organizer?.name ?? "Your family",
@@ -30,7 +31,7 @@ function Agreement({ family }: { family: Family }) {
     holdMinutes: family.settings.holdMinutes,
   });
   return (
-    <Frame role="margaret">
+    <Frame role="margaret" locked={locked}>
       <div className={styles.layout} data-agree="">
         <section className={styles.today} aria-labelledby="agree-heading">
           <Stitch kind="light" />
@@ -75,9 +76,10 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
   const now = new Date();
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  const locked = await keepDeviceTo(["Margaret"], family);
   await sweepExpiredHolds(family, sessionId);
   after(() => sweepOtherExpiredHolds());
-  if (!family.settings.parentAgreedAt) return <Agreement family={family} />;
+  if (!family.settings.parentAgreedAt) return <Agreement family={family} locked={locked} />;
   const { paypal } = await searchParams;
   const notice = paypal ? NOTICES[paypal] : undefined;
   const lines = orderForParent(await getParentDay(family, now)).map(parentLine);
@@ -85,7 +87,7 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
   const connected = (await savedPayPal(family)) !== null;
 
   return (
-    <Frame role="margaret">
+    <Frame role="margaret" locked={locked}>
       <div className={styles.layout}>
         <section className={styles.today} aria-labelledby="today-heading">
           <Stitch kind="light" />

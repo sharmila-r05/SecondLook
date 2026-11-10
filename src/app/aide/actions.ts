@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { familyAide } from "@/lib/aide";
 import { db } from "@/lib/db";
+import { keepDeviceTo } from "@/lib/device-lock";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
@@ -15,6 +16,7 @@ import { localDate } from "@/lib/time";
 export async function checkIn(): Promise<void> {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  await keepDeviceTo(["Rosa"], family);
   const aide = familyAide(family);
 
   const now = new Date();
@@ -38,6 +40,7 @@ export async function checkIn(): Promise<void> {
 export async function checkOut(): Promise<void> {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  await keepDeviceTo(["Rosa"], family);
   const aide = familyAide(family);
 
   const now = new Date();

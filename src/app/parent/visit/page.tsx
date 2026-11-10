@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Frame } from "@/components/quilt/Frame";
 import { Stitch } from "@/components/quilt/Stitch";
 import { db } from "@/lib/db";
+import { keepDeviceTo } from "@/lib/device-lock";
 import { ensureFamily, memberNamed } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
 import { requireParentAgreed } from "@/lib/setup-gate";
@@ -14,6 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ConfirmVisit() {
   const family = await ensureFamily(await getSessionId());
+  const locked = await keepDeviceTo(["Margaret"], family);
   requireParentAgreed(family);
   const aide = memberNamed(family, "aide") ?? "The aide";
   const [already] = await db()<{ at: Date }[]>`
@@ -21,7 +23,7 @@ export default async function ConfirmVisit() {
     where family_id = ${family.id} and visit_date = ${localDate(new Date())}::date`;
 
   return (
-    <Frame role="margaret">
+    <Frame role="margaret" locked={locked}>
       <section className={`${styles.ask} ${styles.visitAsk}`} aria-labelledby="ask-heading">
         <House className={styles.symbol} aria-hidden="true" />
         {already ? (

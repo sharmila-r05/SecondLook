@@ -4,6 +4,7 @@ import { StateMark } from "@/components/quilt/StateMark";
 import { Stitch } from "@/components/quilt/Stitch";
 import { getAideWeek } from "@/lib/aide";
 import { todayCard, type VisitRow, visitRow, weekSummary } from "@/lib/copy/aide";
+import { keepDeviceTo } from "@/lib/device-lock";
 import { ensureFamily } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
 import { formatDay } from "@/lib/time";
@@ -41,12 +42,13 @@ function SettledRow({ row, today = false }: { row: VisitRow; today?: boolean }) 
 export default async function AidePage() {
   const now = new Date();
   const family = await ensureFamily(await getSessionId());
+  const locked = await keepDeviceTo(["Rosa"], family);
   const week = await getAideWeek(family, now);
   const card = todayCard(week.today, week.parent, week.periods);
   const summary = weekSummary(week.visits, week.periods, now);
 
   return (
-    <Frame role="rosa">
+    <Frame role="rosa" locked={locked}>
       <div className={styles.phone}>
         <div className={styles.screen}>
           <header>

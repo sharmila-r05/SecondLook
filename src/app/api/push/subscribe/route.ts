@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { deviceLock } from "@/lib/device-lock";
 import { ensureFamily } from "@/lib/family";
 import { parseSubscription, removeSubscription, saveSubscription, vapidPublicKey } from "@/lib/push";
 import { getSessionId } from "@/lib/session";
@@ -23,6 +24,8 @@ export async function POST(request: Request) {
 
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  // Mom's tablet and Rosa's phone never get the family's alerts (lib/device-lock).
+  if (await deviceLock(family)) return NextResponse.json({ error: "alerts are for Sarah and Tom" }, { status: 403 });
   const name = body?.as === "tom" ? "Tom" : "Sarah";
   const member = family.members.find((m) => m.role === "child" && m.name === name);
   if (!member) return NextResponse.json({ error: "no such family member" }, { status: 404 });

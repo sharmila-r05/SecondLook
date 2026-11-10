@@ -7,6 +7,7 @@ import { WeekQuilt } from "@/components/ledger/WeekQuilt";
 import { Frame } from "@/components/quilt/Frame";
 import { sweepExpiredHolds, sweepOtherExpiredHolds } from "@/lib/bills";
 import { refreshCare } from "@/lib/care";
+import { keepDeviceTo } from "@/lib/device-lock";
 import { ensureFamily } from "@/lib/family";
 import { buildLedger } from "@/lib/ledger";
 import { getLedgerInput } from "@/lib/ledger-data";
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
 export default async function LedgerPage() {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  await keepDeviceTo([], family);
   requireSetUp(family);
   // The same lazy sweep the family screen runs, so a hold nobody answered reads as cancelled here too.
   await sweepExpiredHolds(family, sessionId);

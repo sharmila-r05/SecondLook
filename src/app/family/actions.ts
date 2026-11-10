@@ -6,6 +6,7 @@ import { type BillRequest, captureAndPay, loadRequest, moveRequest, releaseHold 
 import { closeWeek } from "@/lib/care";
 import { decidedMessage } from "@/lib/copy/push";
 import { db } from "@/lib/db";
+import { keepDeviceTo } from "@/lib/device-lock";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily } from "@/lib/family";
 import { PayPalError } from "@/lib/paypal";
@@ -25,6 +26,7 @@ export async function decide(formData: FormData): Promise<void> {
 
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  await keepDeviceTo([], family);
   const member = family.members.find((m) => m.role === "child" && m.name === (asTom ? "Tom" : "Sarah"));
   if (!member) redirect(back);
 
@@ -59,6 +61,7 @@ export async function closeCareWeek(formData: FormData): Promise<void> {
   const back = asTom ? "/family?as=tom&tab=care" : "/family?tab=care";
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  await keepDeviceTo([], family);
   const member = family.members.find((m) => m.role === "child" && m.name === (asTom ? "Tom" : "Sarah"));
   if (!member) redirect(back);
   try {

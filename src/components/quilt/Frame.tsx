@@ -16,9 +16,10 @@ const ROLES: { role: DemoRole; label: string; href: string }[] = [
 /**
  * The plum border every screen sits in, with the sandbox label (brief §4). Inside a family, the bar also switches
  * person and has Reset; the welcome and sign-in pages pass no `role`, so nobody is selected and only `barEnd` (such as
- * Sign out) sits at the right. The wordmark always goes back to the welcome page and its two doors.
+ * Sign out) sits at the right. Mom's tablet and Rosa's phone in a family someone set up are `locked` to their own
+ * screen, so their bar has neither (lib/device-lock). The wordmark always goes back to the welcome page.
  */
-export function Frame({ role, barEnd, children }: { role?: DemoRole; barEnd?: ReactNode; children: ReactNode }) {
+export function Frame({ role, locked = false, barEnd, children }: { role?: DemoRole; locked?: boolean; barEnd?: ReactNode; children: ReactNode }) {
   return (
     <div className={styles.shell}>
       <header className={styles.bar}>
@@ -27,7 +28,7 @@ export function Frame({ role, barEnd, children }: { role?: DemoRole; barEnd?: Re
           <span>Second Look</span>
         </Link>
         <p className={styles.sandbox}>Sandbox — no real money</p>
-        {role && (
+        {role && !locked && (
           <>
             <nav className={styles.roles} aria-label="Demo: switch person">
               <ul>

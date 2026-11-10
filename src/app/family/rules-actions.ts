@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { keepDeviceTo } from "@/lib/device-lock";
 import { ensureFamily, type Family } from "@/lib/family";
 import { parseBills, saveBills, saveCare, saveRules } from "@/lib/family-setup";
 import { getSessionId } from "@/lib/session";
@@ -19,6 +20,7 @@ function changer(family: Family, form: FormData): string {
 async function change(form: FormData, save: (family: Family, sessionId: string, by: string) => Promise<void>, saved: string): Promise<RulesState> {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  await keepDeviceTo([], family);
   try {
     await save(family, sessionId, changer(family, form));
   } catch (err) {

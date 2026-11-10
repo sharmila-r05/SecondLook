@@ -18,6 +18,21 @@ export async function homeFor(sessionId: string, person: Person | null, account:
   return homeIn(await findFamily(sessionId), person, account);
 }
 
+/** The people whose device is kept to their own screen in a family someone set up. */
+export type LockedPerson = "Margaret" | "Rosa";
+
+/**
+ * Mom's tablet and Rosa's phone, in a family someone set up: kept to their own screen, with no tabs to the family
+ * screen, where Mom could read the scam chips or approve her own held payment. A device signed in as Sarah or Tom
+ * is never kept, so the organizer can't lock themselves out by opening Mom's link. The ready-made family keeps every
+ * tab for judges.
+ */
+export function lockedPersonIn(family: Pick<Family, "settings"> | null, person: Person | null, account: Account | null): LockedPerson | null {
+  if (!family || family.settings.origin !== "setup") return null;
+  if (account?.person === "Sarah" || account?.person === "Tom") return null;
+  return person === "Margaret" || person === "Rosa" ? person : null;
+}
+
 /**
  * Where the app on a home screen opens (the manifest's start_url goes through /open). In a family someone set up,
  * each device opens its own person's screen, so Mom's tablet never opens on Sarah's. The ready-made family opens the

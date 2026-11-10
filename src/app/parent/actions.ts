@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { keepDeviceTo } from "@/lib/device-lock";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily } from "@/lib/family";
 import { parentAgrees } from "@/lib/family-setup";
@@ -16,6 +17,7 @@ import { publicOrigin } from "@/lib/redirect";
 export async function connectPayPal(): Promise<void> {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  await keepDeviceTo(["Margaret"], family);
   if (await savedPayPal(family)) redirect("/parent");
 
   const h = await headers();
@@ -34,6 +36,7 @@ export async function connectPayPal(): Promise<void> {
 export async function confirmVisitToday(): Promise<void> {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  await keepDeviceTo(["Margaret"], family);
   const aide = family.members.find((m) => m.role === "aide");
   if (!aide) throw new Error("this family has no aide");
 
@@ -54,6 +57,8 @@ export async function confirmVisitToday(): Promise<void> {
 /** Margaret says yes to Second Look, once, on her own screen: the first thing she sees in a family just set up. */
 export async function agreeToSecondLook(): Promise<void> {
   const sessionId = await getSessionId();
-  await parentAgrees(await ensureFamily(sessionId), sessionId);
+  const family = await ensureFamily(sessionId);
+  await keepDeviceTo(["Margaret"], family);
+  await parentAgrees(family, sessionId);
   redirect("/parent");
 }

@@ -9,6 +9,7 @@ import { Stitch } from "@/components/quilt/Stitch";
 import { sweepExpiredHolds, sweepOtherExpiredHolds } from "@/lib/bills";
 import { getCare, refreshCare } from "@/lib/care";
 import { cancelsAt, familyCard, herWords, type SecondLook } from "@/lib/copy/family";
+import { keepDeviceTo } from "@/lib/device-lock";
 import { ensureFamily, getSecondLooks } from "@/lib/family";
 import { getSessionId } from "@/lib/session";
 import { requireSetUp } from "@/lib/setup-gate";
@@ -97,6 +98,8 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
   const tab: Tab = OTHER_TABS.find((t) => t === params.tab) ?? "needs";
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  // Mom's tablet and Rosa's phone never see this screen (hard rules 1 and 2): no scam chips, no approving her own.
+  await keepDeviceTo([], family);
   requireSetUp(family);
   await sweepExpiredHolds(family, sessionId);
   after(() => sweepOtherExpiredHolds());

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { type BillStart, landingAfterProblem, startBill } from "@/lib/bills";
 import { db } from "@/lib/db";
+import { keepDeviceTo } from "@/lib/device-lock";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily, memberNamed } from "@/lib/family";
 import { assertCents, formatUsd } from "@/lib/money";
@@ -36,6 +37,7 @@ export async function hearRequest(text: string): Promise<ReadBack> {
 
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  await keepDeviceTo(["Margaret"], family);
   if (!family.settings.parentAgreedAt) return { ok: false, message: "", goTo: "/parent" };
   const parsed = parseRequest(said, memberNamed(family, "aide"));
   if (parsed?.kind === "visit") return { ok: false, message: "", goTo: "/parent/visit" };
@@ -73,6 +75,7 @@ export async function hearRequest(text: string): Promise<ReadBack> {
 export async function confirmRequest(input: { said: string; payeeId: string | null; payeeName: string; amountCents: number }): Promise<void> {
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
+  await keepDeviceTo(["Margaret"], family);
   if (!family.settings.parentAgreedAt) redirect("/parent");
   assertCents(input.amountCents);
   if (input.amountCents <= 0 || input.amountCents > MAX_REQUEST_CENTS) throw new RangeError("amount out of range");

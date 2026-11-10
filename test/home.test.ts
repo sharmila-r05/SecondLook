@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Family, Member } from "@/lib/family";
-import { appStartIn, homeIn } from "@/lib/home";
+import { appStartIn, homeIn, lockedPersonIn } from "@/lib/home";
 import type { FamilySettings } from "@/lib/settings";
 
 const members: Member[] = [
@@ -56,5 +56,29 @@ describe("where the installed app opens", () => {
     expect(appStartIn(family("ready", true), null, null)).toBe("/family");
     expect(appStartIn(null, null, null)).toBe("/family");
     expect(homeIn(family("ready", true), "Margaret", null)).toBeNull();
+  });
+});
+
+describe("whose device is kept to their own screen", () => {
+  it("keeps Mom's tablet and Rosa's phone to their own screen in a family someone set up", () => {
+    const f = family("setup", true);
+    expect(lockedPersonIn(f, "Margaret", null)).toBe("Margaret");
+    expect(lockedPersonIn(f, "Rosa", null)).toBe("Rosa");
+  });
+
+  it("never keeps Sarah's or Tom's device, or one with no person yet", () => {
+    const f = family("setup", true);
+    expect(lockedPersonIn(f, "Sarah", null)).toBeNull();
+    expect(lockedPersonIn(f, "Tom", null)).toBeNull();
+    expect(lockedPersonIn(f, null, null)).toBeNull();
+  });
+
+  it("never locks out the organizer who opened Mom's link on their own signed-in device", () => {
+    expect(lockedPersonIn(family("setup", true), "Margaret", { id: "a", sessionId: "x", person: "Tom" })).toBeNull();
+  });
+
+  it("leaves every tab open in the ready-made family, for judges looking around", () => {
+    expect(lockedPersonIn(family("ready", true), "Margaret", null)).toBeNull();
+    expect(lockedPersonIn(null, "Margaret", null)).toBeNull();
   });
 });
