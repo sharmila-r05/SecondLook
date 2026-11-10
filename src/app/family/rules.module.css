@@ -336,27 +336,6 @@ legend + .field {
   height: 24px;
 }
 
-/* Why a save was refused: plain words on a white patch with an ink edge (rose stays for what waits on family). */
-.error {
-  display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--paper);
-  box-shadow: inset 0 0 0 2px var(--ink);
-  color: var(--ink);
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.errorIcon {
-  width: 22px;
-  height: 22px;
-  margin-top: 1px;
-}
-
 /* The family: each person's mark in their own fabric once they're in, an open dashed ring until then. */
 .people {
   display: grid;

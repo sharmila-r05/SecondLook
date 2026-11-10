@@ -1,8 +1,8 @@
 "use client";
 
-import { CircleAlert } from "lucide-react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { FormError } from "@/components/form/FormError";
 import type { SignInState } from "./actions";
 import { signInStep } from "./step";
 import styles from "./signin.module.css";
@@ -31,15 +31,6 @@ function DifferentEmail() {
     <button type="submit" name="intent" value="over" className={styles.textButton} disabled={pending}>
       Use a different email
     </button>
-  );
-}
-
-function ErrorLine({ id, text }: { id: string; text: string }) {
-  return (
-    <p id={id} className={styles.error} role="alert">
-      <CircleAlert className={styles.errorIcon} aria-hidden="true" />
-      <span>{text}</span>
-    </p>
   );
 }
 
@@ -93,7 +84,7 @@ export function SignInForm({ minutes, linkExpired }: { minutes: number; linkExpi
               aria-invalid={state.error ? true : undefined}
               aria-describedby={state.error ? "code-error code-sent" : "code-sent"}
             />
-            {state.error && <ErrorLine id="code-error" text={state.error} />}
+            {state.error && <FormError id="code-error">{state.error}</FormError>}
           </div>
           <MainButton idle="Sign in" busy="Checking…" />
           <div className={styles.after}>
@@ -138,9 +129,10 @@ export function SignInForm({ minutes, linkExpired }: { minutes: number; linkExpi
             required
             autoFocus={state !== START}
             defaultValue={state.email}
+            aria-invalid={state.error ? true : undefined}
             aria-describedby={state.error ? "email-error email-hint" : "email-hint"}
           />
-          {state.error && <ErrorLine id="email-error" text={state.error} />}
+          {state.error && <FormError id="email-error">{state.error}</FormError>}
         </div>
         <MainButton idle="Email me a link and code" busy="Sending…" />
       </form>

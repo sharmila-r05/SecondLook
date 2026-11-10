@@ -1,7 +1,7 @@
 "use client";
 
-import { CircleAlert } from "lucide-react";
 import { type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
+import { FormError } from "@/components/form/FormError";
 import { StateMark } from "@/components/quilt/StateMark";
 import { CHOICES, USUAL_AMOUNT_RANGE, VISIT_RATE_RANGE } from "@/lib/settings";
 import { amountText, dollars, refusal, shareWords, timesWords, waitWords } from "./rules-copy";
@@ -51,12 +51,7 @@ function SaveRow({
   const saved = Boolean(state.saved) && !changed && !pending;
   return (
     <div className={r.saveRow}>
-      {refused && state.error && (
-        <p className={r.error} role="alert">
-          <CircleAlert className={r.errorIcon} aria-hidden="true" />
-          <span>{refusal(state.error, range)} Nothing was changed.</span>
-        </p>
-      )}
+      {refused && state.error && <FormError>{refusal(state.error, range)} Nothing was changed.</FormError>}
       <div className={r.saveLine}>
         <button type="submit" className={changed || refused || pending ? r.saveReady : r.save} disabled={pending} aria-busy={pending || undefined}>
           {pending ? "Saving…" : label}

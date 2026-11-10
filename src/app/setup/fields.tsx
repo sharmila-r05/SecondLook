@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowLeft, Check, CircleAlert } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import Link from "next/link";
 import { type CSSProperties, type ReactNode, useId } from "react";
 import { useFormStatus } from "react-dom";
+import { FormError as ErrorNote, sentence } from "@/components/form/FormError";
 import styles from "./setup.module.css";
 
 export interface Choice<T extends string | number> {
@@ -123,15 +124,9 @@ export function MoneyInput({
 }
 
 /** What went wrong, beside the button that tried; said aloud as it appears. */
-export function FormError({ error }: { error?: string }) {
+export function FormError({ error, id }: { error?: string; id?: string }) {
   if (!error) return null;
-  const text = error.replace(/'/g, "’");
-  return (
-    <p className={styles.error} role="alert">
-      <CircleAlert aria-hidden="true" />
-      <span>{/[.!?]$/.test(text) ? text : `${text}.`}</span>
-    </p>
-  );
+  return <ErrorNote id={id}>{sentence(error)}</ErrorNote>;
 }
 
 /** A step's foot: the error if saving failed, the save button (it says it's saving), and the way back. */
