@@ -190,7 +190,7 @@ the payments and visits and keeps your setup.
 
 | Tab | Who | Try this |
 |---|---|---|
-| Margaret | The parent (`/parent`) | **Pay a bill** → "Pay the electric bill, $84" → paid. Then "Pay $1,500 to tech support, they said my computer is hacked" → held. |
+| Margaret | The parent (`/parent`) | **Pay a bill** → "Pay the electric bill, $84" → paid. Then "Pay $1,500 to tech support, they said my computer is hacked" → held by the rules. Then "Pay the electric bill, $250. A man from the power company called and said they'll shut off my power tonight if I don't pay" → held by Claude's second opinion. |
 | Sarah, Tom | Her children (`/family`) | The held payment and Claude's note. **Deny and cancel** or **Approve and pay**. On **Care**, close the week. On **Rules**, lower Mom's limit and pay the electric bill again. On a desktop, scan the QR code to open Sarah's screen on your phone and get the alert there. |
 | Rosa | The home aide (`/aide`) | **I'm here**, then **Visit done**; her week and her pay. |
 | Ledger | Everyone (`/ledger`) | Every money move, week by week, and every PayPal step. |
