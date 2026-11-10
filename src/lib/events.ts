@@ -23,6 +23,7 @@ export type EventType =
   | "paypal:invoice_paid"
   | "week:closed"
   | "ai:note"
+  | "ai:second_opinion"
   | "workflow:started"
   | "family:setup_started"
   | "family:bills_set"

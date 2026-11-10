@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { startBill } from "@/lib/bills";
 import { db } from "@/lib/db";
 import { recordEvent } from "@/lib/events";
@@ -14,6 +15,7 @@ import { riskPolicy } from "@/lib/settings";
 import { getSessionId } from "@/lib/session";
 import { localDate, PARENT_TIME_ZONE } from "@/lib/time";
 import { publicOrigin } from "@/lib/redirect";
+import { awaitOpinion, PATTERNS, reserveOpinion, runOpinion } from "@/lib/second-opinion";
 import { settleHeldBill } from "./settle";
 
 /** Anything above this is surely a mishearing; she's asked to say it again. */
@@ -32,7 +34,8 @@ export async function hearRequest(text: string): Promise<ReadBack> {
   const said = text.trim().slice(0, 300);
   if (!said) return { ok: false, message: "I didn't hear anything. Tap the microphone and try again, or type it below." };
 
-  const family = await ensureFamily(await getSessionId());
+  const sessionId = await getSessionId();
+  const family = await ensureFamily(sessionId);
   if (!family.settings.parentAgreedAt) return { ok: false, message: "", goTo: "/parent" };
   const parsed = parseRequest(said, memberNamed(family, "aide"));
   if (parsed?.kind === "visit") return { ok: false, message: "", goTo: "/parent/visit" };
@@ -46,11 +49,17 @@ export async function hearRequest(text: string): Promise<ReadBack> {
   const payees = await db()<{ id: string; name: string; aliases: string[] }[]>`
     select id, name, aliases from payees where family_id = ${family.id} and known order by name`;
   const payee = matchPayee(parsed.payeeText, payees);
+  const payeeName = payee?.name ?? titleCase(parsed.payeeText);
+
+  // Claude's second opinion is asked for now, while she reads the read-back, so "Yes, pay it" rarely waits for it.
+  const opinion = { payeeName, payeeKnown: payee !== undefined && payee !== null, amountCents: parsed.amountCents, requestText: said };
+  if (await reserveOpinion(family, sessionId, opinion)) after(() => runOpinion(family, sessionId, opinion));
+
   return {
     ok: true,
     said,
     payeeId: payee?.id ?? null,
-    payeeName: payee?.name ?? titleCase(parsed.payeeText),
+    payeeName,
     amountCents: parsed.amountCents,
     amountLabel: formatUsd(parsed.amountCents),
   };
@@ -69,6 +78,10 @@ export async function confirmRequest(input: { said: string; payeeId: string | nu
   if (input.amountCents <= 0 || input.amountCents > MAX_REQUEST_CENTS) throw new RangeError("amount out of range");
   const payeeName = input.payeeName.trim().slice(0, 80);
   if (!payeeName) throw new Error("no payee");
+
+  // Asked for during the read-back; a moment's wait at most, then the rules alone decide.
+  const opinion = await awaitOpinion(family.id, { payeeName: input.payeeName, amountCents: input.amountCents, requestText: input.said });
+  const secondOpinion = opinion?.concern && opinion.pattern && opinion.reason ? { chip: PATTERNS[opinion.pattern], reason: opinion.reason } : null;
 
   const requestId = await db().begin(async (tx) => {
     let payee: { id: string; name: string; known: boolean; per_payment_limit_cents: string | null; usual_amount_cents: string | null } | undefined;
@@ -104,6 +117,7 @@ export async function confirmRequest(input: { said: string; payeeId: string | nu
         : null,
       payeeAsHeard: payeeName,
       todaysTotalCents: Number(today?.total ?? 0),
+      secondOpinion,
     }, riskPolicy(family.settings));
 
     // Status stays "new" until PayPal has authorized the payment; only then is it auto-approved or held.

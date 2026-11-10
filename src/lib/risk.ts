@@ -3,7 +3,7 @@
 
 import { formatUsd } from "@/lib/money";
 
-export type RuleId = "new_payee" | "over_limit" | "unusual_amount" | "scam_wording" | "urgency" | "daily_total";
+export type RuleId = "new_payee" | "over_limit" | "unusual_amount" | "scam_wording" | "urgency" | "daily_total" | "second_opinion";
 
 export interface RuleHit {
   id: RuleId;
@@ -23,6 +23,11 @@ export interface RiskInput {
   payeeAsHeard: string;
   /** Today's other payments in her time zone, excluding any that were cancelled. */
   todaysTotalCents: number;
+  /**
+   * Claude's second opinion (second-opinion.ts), when it heard a scam story in her words. It can only add a hold:
+   * without it, or when the model is off, the rules above decide alone.
+   */
+  secondOpinion?: { chip: string; reason: string } | null;
 }
 
 export interface RiskPolicy {
@@ -107,6 +112,11 @@ export function evaluate(input: RiskInput, policy: RiskPolicy = DEFAULT_POLICY):
       chip: `Over ${chipUsd(policy.dailyLimitCents)} today`,
       fact: `${formatUsd(input.todaysTotalCents + amountCents)} today with this payment, over her ${formatUsd(policy.dailyLimitCents)} daily limit`,
     });
+  }
+
+  // Claude adds its reading only when the scam-word lists didn't already name the story.
+  if (input.secondOpinion && !rules.some((r) => r.id === "scam_wording")) {
+    rules.push({ id: "second_opinion", chip: `Claude: ${input.secondOpinion.chip}`, fact: input.secondOpinion.reason });
   }
 
   return { hold: rules.length > 0, rules };

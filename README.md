@@ -63,6 +63,24 @@ stored before the call.
 
 ![The Every PayPal step table: invoices to Sarah and Tom, the payout to Rosa, the voided hold and the original authorization, each with its PayPal ID, status and request ID.](assets/readme/paypal-steps.png)
 
+## How a family sets it up
+
+Say Tom is the son. He sets Second Look up with his mother, not over her head:
+
+1. **He signs in with his email** (a link and a six-digit code) and says who he is.
+2. **Mom's regular bills:** the electric company and the pharmacy, each with what it usually comes to. Known payees
+   with usual amounts go straight through; anyone new gets a second look.
+3. **What gets a second look:** her limit for one payment, her limit for a day, how far above its usual a regular
+   bill may go, how long a held payment waits before it's cancelled, and whether he or both children are asked.
+   Scam wording (tech support, gift cards, crypto or wire, the IRS, "don't tell anyone") always gets a second look.
+4. **Care costs:** Rosa's rate per visit and how he and his sister split it.
+5. **Invites:** one link or QR code each for Mom's tablet, his sister's phone and Rosa's phone. Each opens Second Look
+   as that person, on their own device.
+6. **On her tablet, Mom reads what it does in three plain sentences and says yes**, then connects her PayPal once.
+   Nothing can be paid before she agrees.
+
+Sarah and Tom can change any rule later on their **Rules** tab; it applies from Mom's next payment.
+
 ## How the money moves
 
 Second Look is a pass-through: Margaret's money reaches the payee only through PayPal, and only after a capture.
@@ -115,11 +133,20 @@ Invoicing and webhook verification call the REST API directly.
 
 ## Where AI is used
 
-- **Claude Sonnet 5.5** (`claude-sonnet-5-5`, Anthropic API) writes the note Sarah and Tom read on a held payment, from
-  the facts the rules found. For the $1,500 call above it wrote: *"This is a first-time payee, well over her $300.00
+- **Claude's second opinion.** While Margaret's request is read back to her, Claude Sonnet 5.5 (`claude-sonnet-5-5`)
+  reads her words and answers one question: do they tell a known scam story (a shut-off threat, a relative in trouble
+  abroad, a prize to claim, an impostor bank...) in words the rules' lists would miss? If so, the payment is held like any
+  other, with Claude's reading as a chip. *"Pay the electric bill, $250. A man from the power company called and said
+  they'll shut off my power tonight if I don't pay"* is a known payee, under her limit and under 3× the usual: the rules
+  alone would pay it. Claude holds it: *"Mom said a man phoned claiming the power company will shut off her electricity
+  tonight unless she pays, which is a classic urgent shutoff-threat scam, even though the payee is her regular one."*
+  **It can only add a hold, never remove one**: when the model is off, over its cap, slow (it gets four seconds after
+  she says yes) or unsure, the rules alone decide, and her words are passed as quoted data, never as instructions.
+- **Claude writes the note** Sarah and Tom read on a held payment, from the facts the rules (and the second opinion)
+  found. For the $1,500 call above it wrote: *"This is a first-time payee, well over her $300.00
   limit, and Mom said someone told her the computer was hacked. That fits a common tech-support scam, where callers
   claim a problem and ask for payment."*
-- The **rules alone decide** what's held; the model only explains. The note is written after Margaret has her answer,
+- The **rules decide** what's held, and Claude can add to them, never subtract. The note is written after Margaret has her answer,
   so she never waits on it. A plain template note is used if the model is off, over its cap, slow, or returns anything
   unexpected. Calls are capped per demo session and per day.
 - **Speech recognition** in the browser turns what Margaret says into text on her own device.
@@ -134,17 +161,25 @@ Invoicing and webhook verification call the REST API directly.
 - **Integer cents** everywhere; shares always add up to the total, with the leftover cent going to a fixed person.
 - **Secrets stay on the server**; the app refuses to start unless `PAYPAL_ENV=sandbox`.
 - **Each visitor gets an isolated demo family**; Reset clears only theirs.
+- **Sign-in stores no email address**, only a keyed hash of it. Links and codes are hashed, work once, expire in 15
+  minutes, and sending is capped per visitor, per address and per day.
 - **Margaret is never shamed**: no scam words or risk scores on her screen.
 
 ## Try it
 
-Open the [live demo](https://secondlook-02u1.onrender.com) and switch people with the tabs at the top. Each visitor gets
-their own demo family; **Reset** starts it over.
+Open the [live demo](https://secondlook-02u1.onrender.com). The welcome page has two doors:
+
+- **See a family already set up:** the Hale family, ready to use, no sign-in. Switch people with the tabs at the top.
+- **Set up your family:** you play Sarah or Tom, sign in with your email and set the family up as above (about two
+  minutes). On the invites step, *Use the demo's saved PayPal* stands in for Mom's PayPal login.
+
+Each visitor gets their own demo family. **Reset** starts the ready-made one over; in a family you set up it clears
+the payments and visits and keeps your setup.
 
 | Tab | Who | Try this |
 |---|---|---|
 | Margaret | The parent (`/parent`) | **Pay a bill** → "Pay the electric bill, $84" → paid. Then "Pay $1,500 to tech support, they said my computer is hacked" → held. |
-| Sarah, Tom | Her children (`/family`) | The held payment and Claude's note. **Deny and cancel** or **Approve and pay**. On **Care**, close the week. On a desktop, scan the QR code to open Sarah's screen on your phone and get the alert there. |
+| Sarah, Tom | Her children (`/family`) | The held payment and Claude's note. **Deny and cancel** or **Approve and pay**. On **Care**, close the week. On **Rules**, lower Mom's limit and pay the electric bill again. On a desktop, scan the QR code to open Sarah's screen on your phone and get the alert there. |
 | Rosa | The home aide (`/aide`) | **I'm here**, then **Visit done**; her week and her pay. |
 | Ledger | Everyone (`/ledger`) | Every money move, week by week, and every PayPal step. |
 
@@ -167,8 +202,10 @@ You need Node 24.22.1 (`.nvmrc`), PostgreSQL 16 or later, and a PayPal developer
    a US sandbox business account, and tick Invoicing, Payouts and Save payment methods. Create US sandbox personal
    accounts for Margaret, Sarah, Tom and Rosa, and accounts for the payees. Put their addresses in
    `src/lib/demo/accounts.ts`.
-2. **Environment.** `cp .env.example .env` and fill it in. `PAYPAL_ENV` must be `sandbox`. `LLM_API_KEY` is optional
-   (without it the template note is used); so are the VAPID keys (web push) and the Render Workflows settings.
+2. **Environment.** `cp .env.example .env` and fill it in. `PAYPAL_ENV` must be `sandbox`, and `AUTH_SECRET` must be
+   set (`openssl rand -base64 48`). `LLM_API_KEY` is optional (without it the template note is used); so are the VAPID
+   keys (web push), the Render Workflows settings, and Resend (`RESEND_API_KEY`, `EMAIL_FROM`): without Resend a
+   development server shows the sign-in code on the page instead of emailing it.
 3. **Install and run:**
 
    ```sh
@@ -191,7 +228,8 @@ Useful scripts: `scripts/sandbox/*.mjs` are small runs against the PayPal sandbo
 ## Deploy on Render
 
 `render.yaml` is a Blueprint for an always-on web service and a Postgres database: **New → Blueprint**, pick this
-repository, and set the secret values it lists. Register the PayPal webhook with
+repository, and set the secret values it lists (`AUTH_SECRET` is generated; sign-in email needs `RESEND_API_KEY` and an
+`EMAIL_FROM` on a domain verified in Resend). Register the PayPal webhook with
 `node --env-file=.env scripts/sandbox/create-webhook.mjs https://<your-service>.onrender.com` and set the printed ID as
 `PAYPAL_WEBHOOK_ID`. For close-the-week on Render Workflows, create a workflow service from this repository with the
 start command `node --experimental-transform-types --import ./workflows/register.mjs workflows/close-week.ts`, then set
@@ -200,8 +238,9 @@ start command `node --experimental-transform-types --import ./workflows/register
 ## Project layout
 
 ```
-src/app/            Margaret, family, aide and ledger screens; PayPal return, connect and webhook routes
-src/lib/            bills (the money path), care (closing the week), risk rules, PayPal client, Vault, AI note, push, caps
+src/app/            welcome, sign-in and setup; Margaret, family, aide and ledger screens; PayPal and webhook routes
+src/lib/            bills (the money path), care (closing the week), risk rules and family settings, PayPal client,
+                    Vault, AI note, push, sign-in and invites, caps
 src/components/     the quilt components shared by every screen, the ledger and push controls
 db/migrations/      SQL migrations
 workflows/          the Render Workflows task
