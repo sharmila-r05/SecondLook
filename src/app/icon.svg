@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Second Look's mark: a four-patch block on the plum border, one square per person (Margaret, Sarah, Tom, Rosa). -->
+  <rect width="32" height="32" rx="7" fill="#3b1f3a"/>
+  <rect x="4" y="4" width="11" height="11" rx="2.5" fill="#2a7d82"/>
+  <rect x="17" y="4" width="11" height="11" rx="2.5" fill="#5b7db8"/>
+  <rect x="4" y="17" width="11" height="11" rx="2.5" fill="#c99a3e"/>
+  <rect x="17" y="17" width="11" height="11" rx="2.5" fill="#7c9a67"/>
+</svg>
