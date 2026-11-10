@@ -76,8 +76,14 @@ Say Tom is the son. He sets Second Look up with his mother, not over her head:
 4. **Care costs:** Rosa's rate per visit and how he and his sister split it.
 5. **Invites:** one link or QR code each for Mom's tablet, his sister's phone and Rosa's phone. Each opens Second Look
    as that person, on their own device.
+
+   ![Tom's setup, finished: Mom's bills, the rules and care costs sewn as blocks on the left; on the right, an invite card each for Margaret's tablet, Sarah's phone and Rosa's phone, with a QR code, the link, Copy and Share.](assets/readme/setup-invites.png)
+
 6. **On her tablet, Mom reads what it does in three plain sentences and says yes**, then connects her PayPal once.
    Nothing can be paid before she agrees.
+
+   ![Margaret's tablet: "Tom set up Second Look with you", three plain sentences (your bills are still yours to pay; when a payment looks unusual, Tom or Sarah takes a second look; if no one answers in 10 minutes nothing is paid) and one large "That sounds good".](assets/readme/mom-says-yes.png)
+
 
 Sarah and Tom can change any rule later on their **Rules** tab; it applies from Mom's next payment.
 
@@ -142,6 +148,9 @@ Invoicing and webhook verification call the REST API directly.
   tonight unless she pays, which is a classic urgent shutoff-threat scam, even though the payee is her regular one."*
   **It can only add a hold, never remove one**: when the model is off, over its cap, slow (it gets four seconds after
   she says yes) or unsure, the rules alone decide, and her words are passed as quoted data, never as instructions.
+
+  ![Margaret's tablet says the $250 to Hollowbrook Electric was sent to Sarah to double-check. Sarah's phone shows the held payment, Claude's note about a phone call threatening to shut off the power, the chip "Claude: Shut-off threat", and Deny or Approve.](assets/readme/second-opinion.png)
+
 - **Claude writes the note** Sarah and Tom read on a held payment, from the facts the rules (and the second opinion)
   found. For the $1,500 call above it wrote: *"This is a first-time payee, well over her $300.00
   limit, and Mom said someone told her the computer was hacked. That fits a common tech-support scam, where callers
@@ -168,6 +177,9 @@ Invoicing and webhook verification call the REST API directly.
 ## Try it
 
 Open the [live demo](https://secondlook-02u1.onrender.com). The welcome page has two doors:
+
+![The welcome page: "Mom pays her own bills. The family gets a second look when something's off.", how it works in three stitched rows, and two doors: Set up your family, and See a family already set up.](assets/readme/welcome.png)
+
 
 - **See a family already set up:** the Hale family, ready to use, no sign-in. Switch people with the tabs at the top.
 - **Set up your family:** you play Sarah or Tom, sign in with your email and set the family up as above (about two
