@@ -172,6 +172,7 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
                   holdMinutes: family.settings.holdMinutes,
                   ask: family.settings.ask,
                 }}
+                organizer={organizer}
                 sibling={sibling}
                 back={back("bills")}
               />

@@ -1,10 +1,11 @@
 "use client";
 
-import { type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
+import { type CSSProperties, type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
 import { FormError } from "@/components/form/FormError";
 import { StateMark } from "@/components/quilt/StateMark";
+import { askChoices, dollars, RATE_AFTER_NAME, RULES_COPY, rateRange, SHARES, shareWords, splitLabel, timesWords, waitWords } from "@/lib/copy/rules";
 import { CHOICES, USUAL_AMOUNT_RANGE, VISIT_RATE_RANGE } from "@/lib/settings";
-import { amountText, dollars, refusal, shareWords, timesWords, waitWords } from "./rules-copy";
+import { amountText, refusal } from "./rules-copy";
 import { changeBills, changeCare, changeRules, type RulesState } from "./rules-actions";
 import styles from "./family.module.css";
 import r from "./rules.module.css";
@@ -76,7 +77,6 @@ function Choice<T extends string | number>({
   value,
   options,
   words,
-  stacked = false,
 }: {
   name: string;
   label: string;
@@ -84,22 +84,13 @@ function Choice<T extends string | number>({
   value: T;
   options: readonly T[];
   words: (v: T) => string;
-  /** Label above a full-width choice, for choices too long to sit beside it on a phone. */
-  stacked?: boolean;
 }) {
   const id = `rule-${name}`;
   return (
-    <div className={r.field} data-stacked={stacked || undefined}>
-      <div>
-        <label htmlFor={id} className={r.label}>
-          {label}
-        </label>
-        {hint && (
-          <p id={`${id}-hint`} className={r.hint}>
-            {hint}
-          </p>
-        )}
-      </div>
+    <div className={r.field}>
+      <label htmlFor={id} className={r.label}>
+        {label}
+      </label>
       <select id={id} name={name} defaultValue={String(value)} className={r.select} aria-describedby={hint ? `${id}-hint` : undefined}>
         {options.map((o) => (
           <option key={o} value={String(o)}>
@@ -107,6 +98,11 @@ function Choice<T extends string | number>({
           </option>
         ))}
       </select>
+      {hint && (
+        <p id={`${id}-hint`} className={`${r.hint} ${r.fieldHint}`}>
+          {hint}
+        </p>
+      )}
     </div>
   );
 }
@@ -135,22 +131,23 @@ export function RulesForm({
   children: ReactNode;
 }) {
   const save = useSave(changeRules);
+  const viewer = as === "tom" ? "Tom" : "Sarah";
   return (
     <form {...save.form} className={r.form}>
       <input type="hidden" name="as" value={as} />
       <fieldset className={r.group}>
         <legend className="visually-hidden">A payment gets a second look when</legend>
-        <Choice name="limitCents" label="One payment is over" value={values.limitCents} options={CHOICES.limitCents} words={dollars} />
+        <Choice name="limitCents" label={RULES_COPY.limit.label} value={values.limitCents} options={CHOICES.limitCents} words={dollars} />
         <Choice
           name="dailyLimitCents"
-          label="A day’s payments come to over"
+          label={RULES_COPY.daily.label}
           value={values.dailyLimitCents}
           options={CHOICES.dailyLimitCents}
           words={dollars}
         />
         <Choice
           name="unusualMultiple"
-          label="A bill on her list is at least"
+          label={RULES_COPY.unusual.label}
           value={values.unusualMultiple}
           options={CHOICES.unusualMultiple}
           words={timesWords}
@@ -159,29 +156,22 @@ export function RulesForm({
       </fieldset>
 
       <fieldset className={r.group}>
-        <legend className={r.legend}>Who is asked</legend>
+        <legend className={r.legend}>{RULES_COPY.ask.label}</legend>
         <div className={r.radios}>
-          <label className={r.radio}>
-            <input type="radio" name="ask" value="everyone" defaultChecked={values.ask === "everyone"} />
-            <span>
-              <span className={r.radioLabel}>
-                {organizer} and {sibling}
+          {askChoices({ viewer, organizer, sibling }).map((choice) => (
+            <label key={choice.value} className={r.radio}>
+              <input type="radio" name="ask" value={choice.value} defaultChecked={values.ask === choice.value} />
+              <span>
+                <span className={r.radioLabel}>{choice.label}</span>
+                <span className={r.hint}>{choice.detail}</span>
               </span>
-              <span className={r.hint}>Both phones are alerted. Whoever answers first decides.</span>
-            </span>
-          </label>
-          <label className={r.radio}>
-            <input type="radio" name="ask" value="organizer" defaultChecked={values.ask === "organizer"} />
-            <span>
-              <span className={r.radioLabel}>Just {organizer}</span>
-              <span className={r.hint}>Only {organizer}&rsquo;s phone is alerted.</span>
-            </span>
-          </label>
+            </label>
+          ))}
         </div>
         <Choice
           name="holdMinutes"
-          label="Wait for an answer"
-          hint="If nobody answers in time, nothing is paid."
+          label={RULES_COPY.hold.label}
+          hint={RULES_COPY.hold.help}
           value={values.holdMinutes}
           options={CHOICES.holdMinutes}
           words={waitWords}
@@ -258,7 +248,24 @@ export function BillsForm({ as, bills }: { as: Viewer; bills: BillValue[] }) {
   );
 }
 
-/** Rosa's rate per visit and how Sarah and Tom split her pay. */
+/** The split as the setup step draws it: Sarah's part in her cornflower, Tom's in his ochre, each named. */
+function SplitStrip({ id, sarahShare }: { id: string; sarahShare: number }) {
+  const parts = [
+    { name: "Sarah", fabric: "sarah", percent: sarahShare },
+    { name: "Tom", fabric: "tom", percent: 100 - sarahShare },
+  ].filter((p) => p.percent > 0);
+  return (
+    <p id={id} className={r.split} aria-live="polite">
+      {parts.map((p) => (
+        <span key={p.name} className={r.splitPart} data-fabric={p.fabric} style={{ flexGrow: p.percent } as CSSProperties}>
+          {p.name} {p.percent}%
+        </span>
+      ))}
+    </p>
+  );
+}
+
+/** Rosa's pay per visit and how Sarah and Tom split it. */
 export function CareForm({
   as,
   aide,
@@ -271,16 +278,18 @@ export function CareForm({
   sarahShare: number;
 }) {
   const save = useSave(changeCare);
+  const [share, setShare] = useState(sarahShare);
   return (
     <form {...save.form} className={r.form}>
       <input type="hidden" name="as" value={as} />
       <div className={r.field}>
         <div>
           <label htmlFor="care-rate" className={r.label}>
-            <span className={styles.aideName}>{aide}</span>&rsquo;s rate per visit
+            <span className={styles.aideName}>{aide}</span>
+            {RATE_AFTER_NAME}
           </label>
           <p id="care-rate-hint" className={r.hint}>
-            {dollars(VISIT_RATE_RANGE.minCents)} to {dollars(VISIT_RATE_RANGE.maxCents)}
+            {rateRange(VISIT_RATE_RANGE)}
           </p>
         </div>
         <span className={r.money}>
@@ -296,7 +305,33 @@ export function CareForm({
           />
         </span>
       </div>
-      <Choice name="sarahShare" label="How Sarah and Tom split it" value={sarahShare} options={CHOICES.sarahShare} words={shareWords} stacked />
+      <div className={r.field} data-stacked>
+        <div>
+          <label htmlFor="rule-sarahShare" className={r.label}>
+            {splitLabel(as === "tom" ? "Sarah" : "Tom")}
+          </label>
+          <p id="rule-sarahShare-hint" className={r.hint}>
+            {RULES_COPY.split.help}
+          </p>
+        </div>
+        <div className={r.splitLine}>
+          <select
+            id="rule-sarahShare"
+            name="sarahShare"
+            value={share}
+            onChange={(e) => setShare(Number(e.currentTarget.value))}
+            className={r.select}
+            aria-describedby="rule-sarahShare-hint rule-sarahShare-parts"
+          >
+            {SHARES.map((s) => (
+              <option key={s} value={s}>
+                {shareWords(s)}
+              </option>
+            ))}
+          </select>
+          <SplitStrip id="rule-sarahShare-parts" sarahShare={share} />
+        </div>
+      </div>
       <SaveRow label="Save care costs" note={`A new rate starts with ${aide}’s next visit.`} save={save} as={as} range={VISIT_RATE_RANGE} />
     </form>
   );

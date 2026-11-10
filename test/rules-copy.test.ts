@@ -1,24 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { ALWAYS_WORDS, amountText, dollars, peopleRows, type PersonInput, refusal, shareWords, timesWords, waitWords } from "@/app/family/rules-copy";
+import { amountText, peopleRows, type PersonInput, refusal } from "@/app/family/rules-copy";
+import { ALWAYS_WORDS, askChoices, dollars, shareName, shareWords, timesWords, waitWords } from "@/lib/copy/rules";
 import { evaluate } from "@/lib/risk";
 import { CHOICES, USUAL_AMOUNT_RANGE, VISIT_RATE_RANGE } from "@/lib/settings";
 
-describe("the Rules tab's choices", () => {
+describe("the rules' choices, as setup and the Rules tab both name them", () => {
   it("reads each limit, multiple, wait and split as a choice", () => {
     expect(CHOICES.limitCents.map(dollars)).toEqual(["$100", "$200", "$300", "$500", "$1,000"]);
     expect(dollars(2340)).toBe("$23.40");
     expect(amountText(150000)).toBe("1500.00");
-    expect(timesWords(3)).toBe("3× the usual");
+    expect(CHOICES.unusualMultiple.map(timesWords)).toEqual(["2 times", "3 times", "5 times"]);
     expect(CHOICES.holdMinutes.map(waitWords)).toEqual(["10 minutes", "1 hour", "1 day"]);
-    expect(CHOICES.sarahShare.map(shareWords)).toEqual([
-      "Tom pays it all",
-      "Sarah 30%, Tom 70%",
-      "Sarah 40%, Tom 60%",
-      "Half each",
-      "Sarah 60%, Tom 40%",
-      "Sarah 70%, Tom 30%",
-      "Sarah pays it all",
-    ]);
+    expect(CHOICES.sarahShare.map(shareWords)).toEqual(["0 / 100", "30 / 70", "40 / 60", "50 / 50", "60 / 40", "70 / 30", "100 / 0"]);
+    expect(shareName(60)).toBe("Sarah 60%, Tom 40%");
+  });
+
+  it("says who gets asked in the words of whoever is looking", () => {
+    const labels = (viewer: string) => askChoices({ viewer, organizer: "Tom", sibling: "Sarah" }).map((c) => c.label);
+    expect(labels("Tom")).toEqual(["Sarah and me", "Just me"]);
+    expect(labels("Sarah")).toEqual(["Tom and me", "Just Tom"]);
   });
 });
 

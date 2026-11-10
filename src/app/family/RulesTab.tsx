@@ -7,7 +7,8 @@ import type { Account } from "@/lib/auth";
 import { type Family, memberNamed, organizerOf } from "@/lib/family";
 import { type BillRow, getBillChoices } from "@/lib/setup-view";
 import { savedPayPal } from "@/lib/vault";
-import { ALWAYS_WORDS, peopleRows } from "./rules-copy";
+import { ALWAYS_WORDS, RULES_COPY } from "@/lib/copy/rules";
+import { peopleRows } from "./rules-copy";
 import { BillsForm, CareForm, RulesForm } from "./RulesForms";
 import styles from "./family.module.css";
 import r from "./rules.module.css";
@@ -63,9 +64,9 @@ export function RulesTab({ family, as, data }: { family: Family; as: Viewer; dat
           sibling={organizer === "Tom" ? "Sarah" : "Tom"}
         >
           <div className={r.always}>
-            <p className={r.label}>Always, whatever the amount</p>
-            <p className={r.hint}>A payee who isn&rsquo;t on Mom&rsquo;s list, or when she mentions:</p>
-            <ul className={styles.chips} aria-label="Wording that always gets a second look">
+            <p className={r.label}>{RULES_COPY.always.label}</p>
+            <p className={r.hint}>{RULES_COPY.always.help}</p>
+            <ul className={styles.chips} aria-label={RULES_COPY.always.chips}>
               {ALWAYS_WORDS.map((w) => (
                 <li key={w.chip} className={styles.chip} title={`Like “${w.example}”`}>
                   {w.chip}

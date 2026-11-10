@@ -1,17 +1,13 @@
 "use client";
 
 import { type CSSProperties, type FormEvent, useActionState, useState } from "react";
+import { dollars, RULES_COPY, rateLabel, rateRange, SHARES, shareName, shareWords, splitLabel } from "@/lib/copy/rules";
 import { formatUsd, splitCents, toAmount } from "@/lib/money";
-import { CHOICES, dollarsToCents, VISIT_RATE_RANGE } from "@/lib/settings";
+import { dollarsToCents, VISIT_RATE_RANGE } from "@/lib/settings";
 import { saveCareStep, type StepState } from "./actions";
 import { ChoiceGroup, MoneyInput, SubmitRow } from "./fields";
 import styles from "./setup.module.css";
 import { Thread } from "./Thread";
-
-const whole = (cents: number) => formatUsd(cents).replace(/\.00$/, "");
-
-/** Sarah's share first, from all of it to none, so the even split sits in the middle of the row. */
-const SHARES = [...CHOICES.sarahShare].sort((a, b) => b - a);
 
 /** One visit's pay split as care.ts splits a week: whole cents, the leftover cent to Sarah (hard rule 5). */
 function perVisit(rateCents: number | null, sarahShare: number): { sarah: number; tom: number } | null {
@@ -38,7 +34,7 @@ export function CareForm({
   const sibling = organizer === "Sarah" ? "Tom" : "Sarah";
   const [rateWrong, setRateWrong] = useState(false);
   const amounts = perVisit(dollarsToCents(rate), share);
-  const range = `${whole(VISIT_RATE_RANGE.minCents)} to ${whole(VISIT_RATE_RANGE.maxCents)}`;
+  const range = `${dollars(VISIT_RATE_RANGE.minCents)} to ${dollars(VISIT_RATE_RANGE.maxCents)}`;
 
   // Caught here first with an example; the server checks again and its error shows if this misses.
   const outOfRange = (text: string) => {
@@ -64,10 +60,10 @@ export function CareForm({
       <div className={styles.section}>
         <div className={styles.moneyField}>
           <label htmlFor="visit-rate" className={styles.legend}>
-            Rosa&rsquo;s pay per visit
+            {rateLabel("Rosa")}
           </label>
           <p id="visit-rate-help" className={styles.help}>
-            Anything from {range}. It applies from her next visit.
+            {rateRange(VISIT_RATE_RANGE)} It applies from her next visit.
           </p>
           <MoneyInput
             id="visit-rate"
@@ -85,16 +81,14 @@ export function CareForm({
 
         <ChoiceGroup
           name="sarahShare"
-          legend={`How you and ${sibling} split it`}
-          help="Sarah’s part first, then Tom’s, in percent."
+          legend={splitLabel(sibling)}
+          help={RULES_COPY.split.help}
           choices={SHARES.map((s) => ({
             value: s,
-            name: `Sarah ${s}%, Tom ${100 - s}%`,
+            name: shareName(s),
             label: (
               <span className={styles.share} style={{ "--sarah-share": `${s}%` } as CSSProperties}>
-                <span className={styles.shareRatio}>
-                  {s} / {100 - s}
-                </span>
+                <span className={styles.shareRatio}>{shareWords(s)}</span>
                 <span className={styles.shareBar} aria-hidden="true" />
               </span>
             ),
