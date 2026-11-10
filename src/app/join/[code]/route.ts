@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { recordEvent } from "@/lib/events";
 import { joinTarget, markJoined } from "@/lib/join";
-import { cookieOptions, DEVICE_COOKIE, isPerson, screenOf, SESSION_COOKIE } from "@/lib/session-cookie";
+import { cookieOptions, DEVICE_COOKIE, isPerson, type Person, screenOf, SESSION_COOKIE } from "@/lib/session-cookie";
 
 export const dynamic = "force-dynamic";
 
@@ -16,14 +16,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
   const asTom = new URL(request.url).searchParams.get("as") === "tom";
   const target = await joinTarget(code);
 
-  const person = target?.member && isPerson(target.member.name) ? target.member.name : null;
-  const location = !target ? "/?join=expired" : person ? screenOf(person) : asTom ? "/family?as=tom" : "/family";
+  // An invite opens as its person; the family screen's own QR code opens as the child whose screen showed it. Either
+  // way the device remembers whose it is, so the app on its home screen opens there too (/open), not the welcome page.
+  const person: Person | null = !target ? null : target.member && isPerson(target.member.name) ? target.member.name : asTom ? "Tom" : "Sarah";
+  const location = !target || !person ? "/?join=expired" : screenOf(person);
   // A relative Location resolves against the address the device used (see lib/redirect).
   const response = new NextResponse(null, { status: 303, headers: { Location: location, "Cache-Control": "no-store" } });
-  if (!target) return response;
+  if (!target || !person) return response;
 
   response.cookies.set({ name: SESSION_COOKIE, value: target.sessionId, ...cookieOptions() });
-  if (person) response.cookies.set({ name: DEVICE_COOKIE, value: person, ...cookieOptions() });
+  response.cookies.set({ name: DEVICE_COOKIE, value: person, ...cookieOptions() });
   if (target.member && (await markJoined(target.member.id))) {
     await recordEvent(db(), { id: target.member.familyId }, target.sessionId, "member:joined", { by: target.member.name });
   }
