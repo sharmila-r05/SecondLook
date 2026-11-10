@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { startBill } from "@/lib/bills";
+import { type BillStart, landingAfterProblem, startBill } from "@/lib/bills";
 import { db } from "@/lib/db";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily, memberNamed } from "@/lib/family";
@@ -137,7 +137,17 @@ export async function confirmRequest(input: { said: string; payeeId: string | nu
 
   const h = await headers();
   const origin = publicOrigin(h);
-  const started = await startBill(family, sessionId, requestId, origin);
+  // Log PayPal's debug_id, never bodies or emails. A step that didn't finish after the hold is retried on the next look.
+  const failed = (err: unknown) =>
+    console.error("finishing a bill failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);
+
+  let started: BillStart | null = null;
+  try {
+    started = await startBill(family, sessionId, requestId, origin);
+  } catch (err) {
+    failed(err);
+  }
+  if (!started) redirect(await landingAfterProblem(family, { requestId }));
   if (started.kind === "paypal") redirect(started.approveUrl);
 
   // Her saved PayPal placed the hold with no PayPal page: decide now, and she lands back on today's list.
@@ -145,9 +155,8 @@ export async function confirmRequest(input: { said: string; payeeId: string | nu
   try {
     await settleHeldBill(family, sessionId, started.requestId);
   } catch (err) {
-    // Log PayPal's debug_id, never bodies or emails. A capture that didn't finish is retried on the next look.
-    console.error("finishing a bill failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);
-    landing = "/parent?paypal=problem";
+    failed(err);
+    landing = await landingAfterProblem(family, { requestId: started.requestId });
   }
   redirect(landing);
 }

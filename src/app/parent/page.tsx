@@ -62,6 +62,8 @@ function Agreement({ family }: { family: Family }) {
 
 const NOTICES: Record<string, string> = {
   problem: "PayPal didn’t finish that payment, so nothing was paid. You can try again.",
+  // The hold was placed, so the payment is under way: never "try again", which would pay twice.
+  finishing: "PayPal is still finishing that payment. It will show here when it’s done, so there’s no need to pay it again.",
   connected: CONNECT_COPY.connected,
   "not-connected": CONNECT_COPY.notConnected,
 };

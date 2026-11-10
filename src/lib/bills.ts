@@ -338,6 +338,28 @@ export async function releaseHold(family: Pick<Family, "id">, sessionId: string,
   await moveRequest(sql, family, bill.id, bill.status, "voided");
 }
 
+/**
+ * Whether PayPal placed this bill's hold. After a failure, a placed hold is finished by the next look (paid, or sent
+ * to family), so Margaret mustn't be told nothing was paid and asked to try again: trying again would pay twice.
+ */
+export async function holdPlaced(family: Pick<Family, "id">, bill: { requestId: string } | { orderId: string }): Promise<boolean> {
+  const sql = db();
+  const rows =
+    "requestId" in bill
+      ? await sql`select 1 from payments where family_id = ${family.id} and kind = 'authorization'
+                  and payment_request_id = ${bill.requestId} and paypal_authorization_id is not null`
+      : await sql`select 1 from payments where family_id = ${family.id} and kind = 'authorization'
+                  and paypal_order_id = ${bill.orderId} and paypal_authorization_id is not null`;
+  return rows.length > 0;
+}
+
+/** Where Margaret lands after a bill's PayPal step failed: "nothing was paid" only when no hold was placed. */
+export async function landingAfterProblem(family: Pick<Family, "id">, bill: { requestId: string } | { orderId: string }): Promise<string> {
+  // If we can't tell, say it's still finishing: telling her to try again could pay twice.
+  const placed = await holdPlaced(family, bill).catch(() => true);
+  return placed ? "/parent?paypal=finishing" : "/parent?paypal=problem";
+}
+
 /** Margaret backed out on PayPal's page: nothing was authorized, so the request simply goes away. */
 export async function abandonBill(family: Pick<Family, "id">, requestId: string): Promise<void> {
   await db().begin(async (tx) => {

@@ -1,3 +1,4 @@
+import { landingAfterProblem } from "@/lib/bills";
 import { ensureFamily } from "@/lib/family";
 import { PayPalError } from "@/lib/paypal";
 import { seeOther } from "@/lib/redirect";
@@ -20,6 +21,6 @@ export async function GET(request: Request) {
   } catch (err) {
     // Log PayPal's debug_id, never bodies or emails.
     console.error("finishing a bill failed:", err instanceof PayPalError ? `${err.issue} (debug_id ${err.debugId})` : err);
-    return seeOther("/parent?paypal=problem");
+    return seeOther(await landingAfterProblem(family, { orderId }));
   }
 }
