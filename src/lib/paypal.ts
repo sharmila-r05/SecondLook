@@ -190,11 +190,6 @@ export async function createAuthorizeOrder(input: {
   return { orderId: result.id, status: String(result.status), approveUrl, debugId };
 }
 
-export async function getOrderStatus(orderId: string): Promise<string> {
-  const { result } = await call(() => new OrdersController(sdk()).getOrder({ id: orderId }));
-  return String(result.status);
-}
-
 /** After Margaret approved: places the hold. Nothing is taken until a capture. */
 export async function authorizeOrder(input: { orderId: string; requestId: string }): Promise<{
   authorizationId: string;

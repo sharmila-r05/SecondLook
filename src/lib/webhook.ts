@@ -15,18 +15,6 @@ export interface WebhookEvent {
   };
 }
 
-export const WEBHOOK_EVENT_TYPES = [
-  "CHECKOUT.ORDER.APPROVED",
-  "PAYMENT.AUTHORIZATION.CREATED",
-  "PAYMENT.AUTHORIZATION.VOIDED",
-  "PAYMENT.CAPTURE.COMPLETED",
-  "PAYMENT.CAPTURE.PENDING",
-  "PAYMENT.CAPTURE.DECLINED",
-  "PAYMENT.PAYOUTSBATCH.SUCCESS",
-  "PAYMENT.PAYOUTSBATCH.DENIED",
-  "INVOICING.INVOICE.PAID",
-] as const;
-
 /** Applies one verified event. Returns a short word for the log (never the body). */
 export async function handleWebhook(event: WebhookEvent): Promise<string> {
   const sql = db();
