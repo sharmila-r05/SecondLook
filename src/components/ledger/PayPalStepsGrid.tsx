@@ -106,8 +106,17 @@ const COLUMNS: ColDef<StepRow>[] = [
   },
   { headerName: "Amount", field: "amount", comparator: byField("amountCents"), type: "rightAligned", width: 116, minWidth: 112 },
   { headerName: "Status", field: "status", width: 148, minWidth: 140, cellClass: `${styles.code} ${styles.status}` },
-  { headerName: "PayPal ID", field: "paypalId", width: 220, minWidth: 200, cellClass: styles.code, tooltipField: "paypalId" },
-  { headerName: "PayPal-Request-Id", field: "requestId", flex: 1, minWidth: 316, cellClass: styles.code, tooltipField: "requestId" },
+  { headerName: "PayPal ID", field: "paypalId", width: 196, minWidth: 180, cellClass: `${styles.code} ${styles.clip}`, tooltipField: "paypalId" },
+  // A UUID is wider than the room left at 1440px: it ends in an ellipsis inside the table, never past its edge, and the
+  // whole ID shows on hover (it is still all there to select and copy).
+  {
+    headerName: "PayPal-Request-Id",
+    field: "requestId",
+    flex: 1,
+    minWidth: 180,
+    cellClass: `${styles.code} ${styles.clip}`,
+    tooltipField: "requestId",
+  },
 ];
 
 // Under this width the table drops When, Who, Status and both IDs into the cells that stay: What (with who and when)
@@ -129,14 +138,18 @@ const DEFAULT_COLUMN: ColDef<StepRow> = { sortable: true, resizable: true, suppr
 
 export function PayPalStepsGrid({ rows }: { rows: StepRow[] }) {
   const box = useRef<HTMLDivElement>(null);
-  const [narrow, setNarrow] = useState(false);
+  // Unknown until the box has a width: the table is drawn only then, with the columns for that width, so it never
+  // paints one set of columns and swaps to the other. A zero width (not laid out yet) is not a phone.
+  const [narrow, setNarrow] = useState<boolean | null>(null);
   const empty = rows.length === 0;
 
-  // The observer reports the box's width as soon as it starts observing, before the first paint.
   useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
-    const observer = new ResizeObserver(() => setNarrow(el.clientWidth < NARROW));
+    // The observer reports the box's width as soon as it starts observing, before the first paint.
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth > 0) setNarrow(el.clientWidth < NARROW);
+    });
     observer.observe(el);
     return () => observer.disconnect();
   }, [empty]);
@@ -146,18 +159,20 @@ export function PayPalStepsGrid({ rows }: { rows: StepRow[] }) {
   }
   return (
     <div className={styles.grid} ref={box}>
-      <AgGridReact<StepRow>
-        theme={quiltTheme}
-        rowData={rows}
-        columnDefs={narrow ? NARROW_COLUMNS : COLUMNS}
-        defaultColDef={DEFAULT_COLUMN}
-        getRowId={(params) => params.data.id}
-        domLayout="autoHeight"
-        enableCellTextSelection
-        ensureDomOrder
-        suppressDragLeaveHidesColumns
-        tooltipShowDelay={300}
-      />
+      {narrow !== null && (
+        <AgGridReact<StepRow>
+          theme={quiltTheme}
+          rowData={rows}
+          columnDefs={narrow ? NARROW_COLUMNS : COLUMNS}
+          defaultColDef={DEFAULT_COLUMN}
+          getRowId={(params) => params.data.id}
+          domLayout="autoHeight"
+          enableCellTextSelection
+          ensureDomOrder
+          suppressDragLeaveHidesColumns
+          tooltipShowDelay={300}
+        />
+      )}
     </div>
   );
 }

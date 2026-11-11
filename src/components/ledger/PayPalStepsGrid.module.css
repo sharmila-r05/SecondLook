@@ -101,3 +101,11 @@
 .status {
   font-weight: 600;
 }
+
+/* An ID too long for its column ends in an ellipsis inside the cell; the tooltip has it whole. */
+.clip,
+.clip > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
