@@ -224,6 +224,22 @@
   font-weight: 700;
 }
 
+/* On a phone the tab bar covers the foot of the screen, and a long note would push Deny and Approve under it. So the
+   reasons come first as chips, then the two buttons and when the hold lapses, then the note that explains them. A
+   button reached by keyboard scrolls clear of the bar. */
+@media (max-width: 760px) {
+  .card .note {
+    order: 1;
+    padding-top: 14px;
+    border-top: 1px solid rgb(26 23 32 / 0.14);
+  }
+
+  .deny,
+  .approve {
+    scroll-margin-bottom: 96px;
+  }
+}
+
 /* Only below about 260px of card width do the two buttons stack, Approve last as in the comp's reading order. */
 @container (max-width: 259px) {
   .decide {
