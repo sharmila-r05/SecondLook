@@ -1,5 +1,5 @@
-// Turns what Margaret said ("Pay the electric bill, $84") into a payee and an amount. The easy shapes are parsed here;
-// anything else goes to the AI model, whose answer is validated the same way. Code, never the model, decides money.
+// Turns what Margaret said ("Pay the electric bill, $84") into a payee and an amount, with plain patterns and no model
+// call. A request in any other shape isn't guessed at: she is asked to say it again. Code, never a model, decides money.
 
 import { toCents } from "@/lib/money";
 import { normalize } from "@/lib/risk";
