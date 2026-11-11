@@ -1,12 +1,12 @@
 {
   "model": "claude-sonnet-5-5",
-  "id": "msg_011CgtvHEfw5z1KHNWj83ZvY",
+  "id": "msg_011CgwSRp2rjFxpewo58PU2G",
   "type": "message",
   "role": "assistant",
   "content": [
     {
       "type": "text",
-      "text": "{\"concern\":true,\"pattern\":\"shutoff_threat\",\"reason\":\"Mom said a man phoned claiming the power company will shut off her electricity tonight unless she pays, which is a classic urgent shutoff-threat scam, even though the payee is her regular one.\"}"
+      "text": "{\"concern\":true,\"pattern\":\"shutoff_threat\",\"reason\":\"Mom said a man phoned claiming to be the power company and threatened to shut off her power tonight unless she pays, a common pressure tactic used in utility scams.\"}"
     }
   ],
   "container": null,
@@ -24,7 +24,7 @@
     "iterations": [
       {
         "input_tokens": 1008,
-        "output_tokens": 89,
+        "output_tokens": 80,
         "cache_read_input_tokens": 0,
         "cache_creation_input_tokens": 0,
         "cache_creation": {
@@ -35,7 +35,7 @@
         "model": null
       }
     ],
-    "output_tokens": 89,
+    "output_tokens": 80,
     "output_tokens_details": {
       "thinking_tokens": 0
     },

@@ -1,12 +1,12 @@
 {
   "model": "claude-sonnet-5-5",
-  "id": "msg_011CgtvHkT4tPKdCeEn4DDxf",
+  "id": "msg_011CgwSRyqhqAWqUGVr4WiBL",
   "type": "message",
   "role": "assistant",
   "content": [
     {
       "type": "text",
-      "text": "{\"concern\":true,\"pattern\":\"family_emergency\",\"reason\":\"Mom says her nephew Jake had an accident in Mexico and needs money sent to a friend of his urgently for the hospital, which fits a relative-in-trouble scam.\"}"
+      "text": "{\"concern\":true,\"pattern\":\"family_emergency\",\"reason\":\"Mom says her nephew Jake was in an accident in Mexico and needs money urgently for the hospital, sent to a friend, which matches a family emergency scam.\"}"
     }
   ],
   "container": null,
@@ -24,7 +24,7 @@
     "iterations": [
       {
         "input_tokens": 1012,
-        "output_tokens": 83,
+        "output_tokens": 79,
         "cache_read_input_tokens": 0,
         "cache_creation_input_tokens": 0,
         "cache_creation": {
@@ -35,7 +35,7 @@
         "model": null
       }
     ],
-    "output_tokens": 83,
+    "output_tokens": 79,
     "output_tokens_details": {
       "thinking_tokens": 0
     },
