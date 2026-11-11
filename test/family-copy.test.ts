@@ -11,6 +11,7 @@ const held: SecondLook = {
   said: "Pay $1,500 to tech support, they said my computer is hacked",
   at,
   note: "Tech Support Line isn’t on the family’s list.",
+  noteByModel: false,
   rules: [{ id: "new_payee", chip: "New payee", fact: "Tech Support Line isn’t on the family’s list" }],
   holdExpiresAt: new Date("2026-11-06T15:51:00Z"),
   decidedBy: null,

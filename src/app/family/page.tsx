@@ -70,7 +70,12 @@ function SecondLookCard({ item, as, recent = false }: { item: SecondLook; as: "s
               <span className={styles.saidLabel}>Mom said:</span> &ldquo;{herWords(item.said)}&rdquo;
             </p>
           )}
-          {item.note && <p className={styles.note}>{item.note}</p>}
+          {item.note && (
+            <div className={styles.note}>
+              {item.noteByModel && <p className={styles.noteBy}>Note by Claude</p>}
+              <p>{item.note}</p>
+            </div>
+          )}
           <ul className={styles.chips} aria-label="Why it was held">
             {item.rules.map((rule) => (
               <li key={`${rule.id}-${rule.chip}`} className={styles.chip} title={rule.fact}>

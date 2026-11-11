@@ -98,6 +98,15 @@
   border-top: 1px solid rgb(26 23 32 / 0.14);
 }
 
+/* Who wrote the note, when the model did: a quiet line above it, never on Margaret's screen. */
+.noteBy {
+  margin-bottom: 4px;
+  color: var(--ink-muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 /* What the payment is for, in Margaret's own words: first under the rule, then the note on why it waits. */
 .said {
   padding-top: 14px;

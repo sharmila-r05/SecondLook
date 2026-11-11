@@ -15,6 +15,8 @@ export interface SecondLook {
   said: string;
   at: Date;
   note: string | null;
+  /** The note is Claude's (an ai:note event replaced the rules' template), so the family card says so. */
+  noteByModel: boolean;
   rules: RuleHit[];
   holdExpiresAt: Date | null;
   decidedBy: string | null;

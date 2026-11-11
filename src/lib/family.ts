@@ -223,6 +223,7 @@ export async function getSecondLooks(family: Family): Promise<SecondLook[]> {
       created_at: Date;
       updated_at: Date;
       risk_note: string | null;
+      note_by_model: boolean;
       request_text: string;
       triggered_rules: RuleHit[];
       hold_expires_at: Date | null;
@@ -231,7 +232,12 @@ export async function getSecondLooks(family: Family): Promise<SecondLook[]> {
     }[]
   >`
     select pr.id, pr.status, pr.amount_cents, pr.created_at, pr.updated_at, pr.risk_note, pr.request_text, pr.triggered_rules,
-           pr.hold_expires_at, p.name as payee, m.name as decided_by
+           pr.hold_expires_at, p.name as payee, m.name as decided_by,
+           -- improveHeldNote records this event only once the model's note has replaced the template.
+           exists (
+             select 1 from events e
+             where e.family_id = pr.family_id and e.type = 'ai:note' and e.payload->>'requestId' = pr.id::text
+           ) as note_by_model
     from payment_requests pr
     join payees p on p.id = pr.payee_id
     left join members m on m.id = pr.decided_by_member_id
@@ -250,6 +256,7 @@ export async function getSecondLooks(family: Family): Promise<SecondLook[]> {
       said: r.request_text,
       at: r.created_at,
       note: r.risk_note,
+      noteByModel: r.note_by_model,
       rules: r.triggered_rules,
       holdExpiresAt: r.hold_expires_at,
       decidedBy: r.decided_by,
