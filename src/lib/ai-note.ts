@@ -60,7 +60,7 @@ export function notePrompt(input: NoteInput): string {
 /** What we'll show: one tidy line of ordinary prose, or nothing. */
 export function cleanNote(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
-  const note = raw.replace(/\s+/g, " ").trim();
+  const note = raw.replace(/\s+/g, " ").replace(/\.{2,}(?=\s|$)/g, ".").trim();
   if (note.length < 20 || note.length > 320) return null;
   if (/https?:|www\.|[<>{}]|\bscore\b|\d\s?%/i.test(note)) return null;
   // The same typography as the rest of the copy: curly apostrophes and quotes.

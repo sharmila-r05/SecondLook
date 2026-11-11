@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
 import { cleanNote, notePrompt, writeNote } from "@/lib/ai-note";
+import { templateNote } from "@/lib/note";
 import { NOTE_CASES } from "./ai-note-cases";
 
 const fixture = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/anthropic/note-${name}.json`, import.meta.url), "utf8"));
@@ -98,5 +99,20 @@ describe("writeNote (replaying recorded answers)", () => {
     const recorded = fixture("tech-support");
     const garbled = { ...recorded, content: [{ type: "text", text: "Sure! Here is a note: this looks risky." }] };
     expect(await writeNote(replaying(garbled).api, NOTE_CASES["tech-support"])).toBeNull();
+  });
+});
+
+describe("full stops", () => {
+  it("never ends a note with two", () => {
+    expect(cleanNote("Mom said a caller threatened to cut her power tonight, a common utility shutoff scam..")).toBe(
+      "Mom said a caller threatened to cut her power tonight, a common utility shutoff scam.",
+    );
+    expect(
+      templateNote({
+        payeeName: "Hollowbrook Electric",
+        amountCents: 25_000,
+        rules: [{ id: "second_opinion", chip: "Claude: Shut-off threat", fact: "A caller threatened to cut her power tonight." }],
+      }),
+    ).toBe("A caller threatened to cut her power tonight.");
   });
 });

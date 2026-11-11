@@ -5,5 +5,6 @@
 import type { RuleHit } from "@/lib/risk";
 
 export function templateNote(input: { payeeName: string; amountCents: number; rules: readonly RuleHit[] }): string {
-  return input.rules.map((r) => `${r.fact.charAt(0).toUpperCase()}${r.fact.slice(1)}.`).join(" ");
+  // A fact may already end a sentence (Claude's reason does): one full stop, never two.
+  return input.rules.map((r) => `${r.fact.charAt(0).toUpperCase()}${r.fact.slice(1).replace(/[.!?\s]+$/, "")}.`).join(" ");
 }
