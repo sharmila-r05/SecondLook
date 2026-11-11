@@ -42,16 +42,16 @@ export function StartOver({ organizer }: { organizer: "Sarah" | "Tom" }) {
         Start over
       </button>
       {asking && (
-        <form id="start-over" action={chooseOrganizer} className={styles.startOver} role="group" aria-labelledby="start-over-question" onKeyDown={escape}>
+        <form id="start-over" action={chooseOrganizer} className={frame.ask} role="group" aria-labelledby="start-over-question" onKeyDown={escape}>
           <input type="hidden" name="person" value={organizer} />
-          <p id="start-over-question" className={styles.startOverText}>
+          <p id="start-over-question" className={frame.askText}>
             <strong>Start over?</strong> This clears Mom&rsquo;s bills and rules, and begins the setup again.
           </p>
-          <div className={styles.startOverButtons}>
-            <PendingButton className={styles.startOverYes} pending="Starting over…">
+          <div className={frame.askButtons}>
+            <PendingButton className={frame.askYes} pending="Starting over…">
               Start over
             </PendingButton>
-            <button ref={keep} type="button" className={styles.startOverNo} onClick={close}>
+            <button ref={keep} type="button" className={frame.askNo} onClick={close}>
               Keep going
             </button>
           </div>

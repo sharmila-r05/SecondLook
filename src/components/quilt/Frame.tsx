@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { FourPatch } from "./FourPatch";
 import styles from "./Frame.module.css";
+import { ResetDemo } from "./ResetDemo";
 
 export type DemoRole = "margaret" | "sarah" | "tom" | "rosa" | "ledger";
 
@@ -15,7 +16,7 @@ const ROLES: { role: DemoRole; label: string; href: string }[] = [
 
 /**
  * The plum border every screen sits in, with the sandbox label (brief §4). Inside a family, the bar also switches
- * person and has Reset; the welcome and sign-in pages pass no `role`, so nobody is selected and only `barEnd` (such as
+ * person and has Reset, which asks once before it clears anything; the welcome and sign-in pages pass no `role`, so nobody is selected and only `barEnd` (such as
  * Sign out) sits at the right. Mom's tablet and Rosa's phone in a family someone set up are `locked` to their own
  * screen, so their bar has neither (lib/device-lock). The wordmark always goes back to the welcome page.
  */
@@ -41,11 +42,7 @@ export function Frame({ role, locked = false, barEnd, children }: { role?: DemoR
                 ))}
               </ul>
             </nav>
-            <form action="/api/demo/reset" method="post" className={styles.resetForm}>
-              <button type="submit" className={styles.reset}>
-                Reset
-              </button>
-            </form>
+            <ResetDemo />
           </>
         )}
         {barEnd && <div className={styles.barEnd}>{barEnd}</div>}

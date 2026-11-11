@@ -88,6 +88,83 @@
   cursor: pointer;
 }
 
+.reset[aria-expanded="true"] {
+  border-style: solid;
+  background: var(--plum-700);
+}
+
+/* "Reset?" or "Start over?", asked in the bar itself before anything is cleared: a row of its own under the bar's
+   buttons, on the border's plum, with its dashed thread. The yes is the solid one; the no leaves everything as it is. */
+.ask {
+  display: flex;
+  flex-wrap: wrap;
+  flex-basis: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  order: 10;
+  margin: 0;
+  padding: 12px 14px;
+  border: 2px dashed rgb(237 230 238 / 0.45);
+  border-radius: var(--radius-row);
+  background: var(--plum-800);
+  color: var(--plum-100);
+}
+
+.askText {
+  flex: 1 1 28ch;
+  line-height: 1.4;
+}
+
+.askText strong {
+  color: var(--paper);
+  font-weight: 800;
+}
+
+.askButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.askYes,
+.askNo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.askYes {
+  border: 0;
+  background: var(--plum-100);
+  color: var(--plum-900);
+}
+
+.askYes:hover {
+  background: var(--paper);
+}
+
+.askYes:disabled {
+  cursor: progress;
+}
+
+.askNo {
+  border: 1px solid rgb(237 230 238 / 0.45);
+  background: transparent;
+  color: var(--plum-100);
+}
+
+.askNo:hover {
+  background: var(--plum-700);
+}
+
 .brand:hover span {
   text-decoration: underline;
   text-decoration-thickness: 2px;
@@ -152,5 +229,20 @@
 
   .reset {
     padding: 0 12px;
+  }
+
+  .ask {
+    order: 5;
+    padding: 12px;
+    font-size: 0.9375rem;
+  }
+
+  .askButtons {
+    flex: 1 1 100%;
+  }
+
+  .askYes,
+  .askNo {
+    flex: 1 1 0;
   }
 }
