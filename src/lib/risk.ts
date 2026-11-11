@@ -36,6 +36,9 @@ export interface RiskPolicy {
   unusualMultiple: number;
 }
 
+/** Letters said as letters: kept in capitals when a payee or a word she said is shown back ("the IRS", not "the Irs"). */
+export const ACRONYM_WORDS: ReadonlySet<string> = new Set(["irs", "ssa", "fbi", "dmv", "atm", "ups", "usps", "cvs", "hoa", "aarp", "usa", "ira", "llc", "tv"]);
+
 export const DEFAULT_POLICY: RiskPolicy = { defaultLimitCents: 30000, dailyLimitCents: 50000, unusualMultiple: 3 };
 
 // Each group yields at most one chip. Phrases match on whole words, so "wire" never matches "wireless".
@@ -100,7 +103,7 @@ export function evaluate(input: RiskInput, policy: RiskPolicy = DEFAULT_POLICY):
 
   for (const group of SCAM_GROUPS) {
     const heard = group.phrases.find((p) => containsPhrase(text, p));
-    if (heard) rules.push({ id: "scam_wording", chip: group.chip, fact: `She mentioned “${heard}”` });
+    if (heard) rules.push({ id: "scam_wording", chip: group.chip, fact: `She mentioned “${heard.split(" ").map((w) => (ACRONYM_WORDS.has(w) ? w.toUpperCase() : w)).join(" ")}”` });
   }
 
   const rushed = URGENCY.find((p) => containsPhrase(text, p));

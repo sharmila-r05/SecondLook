@@ -9,7 +9,7 @@ import { keepDeviceTo } from "@/lib/device-lock";
 import { recordEvent } from "@/lib/events";
 import { ensureFamily, memberNamed } from "@/lib/family";
 import { assertCents, formatUsd } from "@/lib/money";
-import { matchPayee, parseRequest } from "@/lib/parse";
+import { matchPayee, parseRequest, payeeDisplayName } from "@/lib/parse";
 import { PayPalError } from "@/lib/paypal";
 import { evaluate } from "@/lib/risk";
 import { riskPolicy } from "@/lib/settings";
@@ -19,16 +19,16 @@ import { publicOrigin } from "@/lib/redirect";
 import { awaitOpinion, PATTERNS, reserveOpinion, runOpinion } from "@/lib/second-opinion";
 import { settleHeldBill } from "./settle";
 
-/** Anything above this is surely a mishearing; she's asked to say it again. */
-const MAX_REQUEST_CENTS = 1_000_000;
+/**
+ * The most one request can ask for. Large amounts are what scams ask for ("$15,000 for your grandson's bail"), so
+ * they go through like any other bill: every family limit is far below this, so the payment is held and Sarah or
+ * Tom is asked. Above it she's told plainly it's too much for one payment (sandbox holds of $60,000 were measured).
+ */
+const MAX_REQUEST_CENTS = 10_000_000;
 
 export type ReadBack =
   | { ok: true; said: string; payeeId: string | null; payeeName: string; amountCents: number; amountLabel: string }
   | { ok: false; message: string; goTo?: string };
-
-function titleCase(text: string): string {
-  return text.replace(/\b[a-z]/g, (c) => c.toUpperCase());
-}
 
 /** Reads back what Margaret asked for, before anything happens. Nothing is saved here. */
 export async function hearRequest(text: string): Promise<ReadBack> {
@@ -44,14 +44,15 @@ export async function hearRequest(text: string): Promise<ReadBack> {
   if (!parsed) {
     return { ok: false, message: "Sorry, I didn't catch who and how much. Try saying “Pay the electric bill, $84.”" };
   }
-  if (parsed.amountCents <= 0 || parsed.amountCents > MAX_REQUEST_CENTS) {
-    return { ok: false, message: "Sorry, I didn't catch the amount. Could you say it again?" };
+  if (parsed.amountCents <= 0) return { ok: false, message: "Sorry, I didn't catch the amount. Could you say it again?" };
+  if (parsed.amountCents > MAX_REQUEST_CENTS) {
+    return { ok: false, message: "That’s more than Second Look can pay in one go. Nothing was sent." };
   }
 
   const payees = await db()<{ id: string; name: string; aliases: string[] }[]>`
     select id, name, aliases from payees where family_id = ${family.id} and known order by name`;
   const payee = matchPayee(parsed.payeeText, payees);
-  const payeeName = payee?.name ?? titleCase(parsed.payeeText);
+  const payeeName = payee?.name ?? payeeDisplayName(parsed.payeeText, said);
 
   // Claude's second opinion is asked for now, while she reads the read-back, so "Yes, pay it" rarely waits for it.
   const opinion = { payeeName, payeeKnown: payee !== undefined && payee !== null, amountCents: parsed.amountCents, requestText: said };

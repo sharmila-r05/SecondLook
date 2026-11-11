@@ -2,7 +2,7 @@
 // call. A request in any other shape isn't guessed at: she is asked to say it again. Code, never a model, decides money.
 
 import { toCents } from "@/lib/money";
-import { normalize } from "@/lib/risk";
+import { ACRONYM_WORDS, normalize } from "@/lib/risk";
 
 export type Parsed =
   | { kind: "bill"; payeeText: string; amountCents: number; reason: string }
@@ -41,6 +41,22 @@ export function parseRequest(text: string, aideName = "Rosa"): Parsed | null {
     return { kind: "bill", payeeText: second[1].trim(), amountCents: amountToCents(second[2]), reason: (second[3] ?? "").trim() };
   }
   return null;
+}
+
+/** One word for display: an acronym in capitals, anything else with a capital first letter. */
+export function displayWord(word: string): string {
+  return ACRONYM_WORDS.has(word.toLowerCase()) ? word.toUpperCase() : word.replace(/^[a-z]/, (c) => c.toUpperCase());
+}
+
+/**
+ * The payee's name as Margaret meant it. When she typed it with capitals ("IRS", "McKinley Plumbing"), her own
+ * spelling is kept; when speech recognition gave it lower case, each word gets a capital and acronyms stay capitals.
+ */
+export function payeeDisplayName(payeeText: string, said: string): string {
+  const words = payeeText.trim().split(/\s+/);
+  const asTyped = new RegExp(words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[\\s,.]+"), "i").exec(said)?.[0];
+  if (asTyped && /[A-Z]/.test(asTyped)) return asTyped.replace(/\b[a-z]/g, (c) => c.toUpperCase()).replace(/[\s,.]+/g, " ");
+  return words.map(displayWord).join(" ");
 }
 
 export interface PayeeCandidate {

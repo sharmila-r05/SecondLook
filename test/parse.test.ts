@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchPayee, parseRequest } from "@/lib/parse";
+import { matchPayee, parseRequest, payeeDisplayName } from "@/lib/parse";
 
 describe("parseRequest", () => {
   it("reads the demo's bill sentences", () => {
@@ -43,5 +43,19 @@ describe("matchPayee", () => {
   it("treats anyone else as new", () => {
     expect(matchPayee("microsoft support", payees)).toBeNull();
     expect(matchPayee("tech support line", payees)).toBeNull();
+  });
+});
+
+describe("large amounts and names as she meant them", () => {
+  it("reads the amounts scams ask for", () => {
+    expect(parseRequest("Pay $15,000 to my grandson for bail")).toMatchObject({ kind: "bill", amountCents: 1_500_000 });
+    expect(parseRequest("Pay my grandson $12,000")).toMatchObject({ kind: "bill", payeeText: "grandson", amountCents: 1_200_000 });
+  });
+
+  it("keeps acronyms and her own capitals", () => {
+    expect(payeeDisplayName("irs", "pay the irs $600")).toBe("IRS");
+    expect(payeeDisplayName("irs", "Pay $600 to the IRS")).toBe("IRS");
+    expect(payeeDisplayName("tech support", "pay $1,500 to tech support")).toBe("Tech Support");
+    expect(payeeDisplayName("mckinley plumbing", "Pay McKinley Plumbing $90")).toBe("McKinley Plumbing");
   });
 });
