@@ -244,6 +244,7 @@ export async function settleBill(
   requestId: string,
   holdMinutes: number,
   riskNote: (bill: BillRequest) => Promise<string>,
+  payLater?: (task: () => Promise<void>) => void,
 ): Promise<BillRequest> {
   const sql = db();
   const row = await paymentRow(sql, requestId, "authorization");
@@ -264,7 +265,13 @@ export async function settleBill(
   }
 
   const after = await loadRequest(sql, family, requestId);
-  if (after.status === "approved_auto") await captureAndPay(family, sessionId, after);
+  if (after.status === "approved_auto") {
+    // Given payLater, the money is taken now and the payee paid after the response: her "Paid" doesn't wait on
+    // Payouts. The request stays approved_auto until the payout is sent, so the sweeps still finish a failed one.
+    if (payLater) {
+      if (await captureBill(family, sessionId, after)) payLater(() => payBill(family, sessionId, after));
+    } else await captureAndPay(family, sessionId, after);
+  }
   return loadRequest(sql, family, requestId);
 }
 
@@ -273,6 +280,11 @@ export async function settleBill(
  * payout only after a COMPLETED capture. Hard rule 3: the payee is known, or family approved this payment.
  */
 export async function captureAndPay(family: Pick<Family, "id">, sessionId: string, bill: BillRequest): Promise<void> {
+  if (await captureBill(family, sessionId, bill)) await payBill(family, sessionId, bill);
+}
+
+/** Takes the held money (hard rules 1 and 3). True once the capture is COMPLETED; PENDING is finished later. */
+export async function captureBill(family: Pick<Family, "id">, sessionId: string, bill: BillRequest): Promise<boolean> {
   if (bill.status !== "approved_auto" && bill.status !== "approved_by_family") throw new Error(`can't capture a ${bill.status} request`);
   if (bill.status === "approved_auto" && !bill.payeeKnown) throw new Error("an unknown payee needs a family member's approval");
   const sql = db();
@@ -290,10 +302,18 @@ export async function captureAndPay(family: Pick<Family, "id">, sessionId: strin
   if (capture.status !== "COMPLETED") {
     const taken = await captureAuthorization({ authorizationId: hold.paypal_authorization_id, requestId: capture.paypal_request_id, invoiceId: `sl-${bill.id}` });
     await sql`update payments set paypal_capture_id = ${taken.captureId}, status = ${taken.status} where id = ${capture.id}`;
-    if (taken.status !== "COMPLETED") return; // PENDING: the webhook or the next look finishes it
+    if (taken.status !== "COMPLETED") return false; // PENDING: the webhook or the next look finishes it
     await sql`update payments set status = 'CAPTURED' where id = ${hold.id}`; // the authorization row follows the hold
     await recordEvent(sql, family, sessionId, "paypal:captured", { requestId: bill.id, captureId: taken.captureId, amountCents: bill.amountCents });
   }
+  return true;
+}
+
+/** Pays the payee from a COMPLETED capture, then marks the request paid. Hard rule 1: never before the capture. */
+export async function payBill(family: Pick<Family, "id">, sessionId: string, bill: BillRequest): Promise<void> {
+  const sql = db();
+  const capture = await paymentRow(sql, bill.id, "capture");
+  if (capture?.status !== "COMPLETED") throw new Error("no completed capture to pay out from");
 
   let payout = await paymentRow(sql, bill.id, "payout");
   if (!payout) {

@@ -27,7 +27,11 @@ export async function settleApprovedOrder(family: Family, sessionId: string, ord
   return improveLater(family, sessionId, await finishApproval(family, sessionId, orderId, family.settings.holdMinutes, firstNote));
 }
 
-/** Her saved PayPal already placed the hold: decide. */
+/** The payee is paid after the response; a payout that fails here is finished by the next look's sweep. */
+const payAfterResponse = (task: () => Promise<void>) =>
+  after(() => task().catch((err) => console.error("paying the payee after the response failed; the next look retries:", err)));
+
+/** Her saved PayPal already placed the hold: decide. A normal bill is captured now and paid out after the response. */
 export async function settleHeldBill(family: Family, sessionId: string, requestId: string): Promise<BillRequest> {
-  return improveLater(family, sessionId, await settleBill(family, sessionId, requestId, family.settings.holdMinutes, firstNote));
+  return improveLater(family, sessionId, await settleBill(family, sessionId, requestId, family.settings.holdMinutes, firstNote, payAfterResponse));
 }

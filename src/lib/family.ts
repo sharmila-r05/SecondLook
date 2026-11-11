@@ -150,11 +150,13 @@ export function organizerOf(family: Family): Member | undefined {
   return family.members.find((m) => m.id === family.settings.organizerId) ?? family.members.find((m) => m.role === "child");
 }
 
-function billState(status: PaymentRequestState, decidedBy: string | null): BillState {
+function billState(status: PaymentRequestState, decidedBy: string | null, captured = false): BillState {
   switch (status) {
     case "new":
-    case "approved_auto":
       return "processing";
+    case "approved_auto":
+      // The money has left her account once the capture is complete; the payee's payout follows in the background.
+      return captured ? "paid" : "processing";
     case "held":
       return "waiting";
     case "approved_by_family":
@@ -177,9 +179,10 @@ export async function getParentDay(family: Family, now = new Date()): Promise<Pa
   const checker = organizerOf(family)?.name ?? "family";
 
   const bills = await sql<
-    { id: string; status: PaymentRequestState; amount_cents: string; created_at: Date; payee: string | null; decided_by: string | null }[]
+    { id: string; status: PaymentRequestState; amount_cents: string; created_at: Date; payee: string | null; decided_by: string | null; captured: boolean }[]
   >`
-    select pr.id, pr.status, pr.amount_cents, pr.created_at, p.name as payee, m.name as decided_by
+    select pr.id, pr.status, pr.amount_cents, pr.created_at, p.name as payee, m.name as decided_by,
+      exists (select 1 from payments c where c.payment_request_id = pr.id and c.kind = 'capture' and c.status = 'COMPLETED') as captured
     from payment_requests pr
     left join payees p on p.id = pr.payee_id
     left join members m on m.id = pr.decided_by_member_id
@@ -199,7 +202,7 @@ export async function getParentDay(family: Family, now = new Date()): Promise<Pa
       return {
         kind: "bill",
         id: b.id,
-        state: billState(b.status, b.decided_by),
+        state: billState(b.status, b.decided_by, b.captured),
         payee: b.payee ?? "someone new",
         amountCents,
         at: b.created_at,
