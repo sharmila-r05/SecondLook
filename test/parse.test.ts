@@ -59,3 +59,10 @@ describe("large amounts and names as she meant them", () => {
     expect(payeeDisplayName("mckinley plumbing", "Pay McKinley Plumbing $90")).toBe("McKinley Plumbing");
   });
 });
+
+describe("the reason after the payee", () => {
+  it("stops the payee's name at what the money is for", () => {
+    expect(parseRequest("Pay $15,000 to my grandson for bail")).toMatchObject({ payeeText: "my grandson", reason: "bail", amountCents: 1_500_000 });
+    expect(parseRequest("Pay $40 for the pharmacy")).toMatchObject({ payeeText: "pharmacy", amountCents: 4000 });
+  });
+});

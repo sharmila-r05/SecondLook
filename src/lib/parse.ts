@@ -10,7 +10,7 @@ export type Parsed =
 
 // "$1,500", "$84", "84.50", "1500 dollars"
 const AMOUNT = String.raw`\$?\s?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?)(?:\s?(?:dollars|bucks))?`;
-const PAY_AMOUNT_TO = new RegExp(String.raw`^pay ${AMOUNT} (?:to|for) (?:the )?(.+?)(?: bill)?(?:$| because | they | he | she | since | so )(.*)$`);
+const PAY_AMOUNT_TO = new RegExp(String.raw`^pay ${AMOUNT} (?:to|for) (?:the )?(.+?)(?: bill)?(?:$| for | because | they | he | she | since | so )(.*)$`);
 const PAY_PAYEE_AMOUNT = new RegExp(String.raw`^pay (?:the |my )?(.+?)(?: bill)? ${AMOUNT}(?: (.*))?$`);
 const VISIT = /\b(came|was here|visited|has been here|has come)\b/;
 
