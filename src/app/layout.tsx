@@ -13,7 +13,7 @@ const atkinson = Atkinson_Hyperlegible_Next({
 
 export const metadata: Metadata = {
   title: "Second Look",
-  description: "Mom pays her own bills. The family gets a second look when something's off.",
+  description: "Mom pays her own bills. The family gets a second look when something’s off.",
 };
 
 export const viewport: Viewport = {

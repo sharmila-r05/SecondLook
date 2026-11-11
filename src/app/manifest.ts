@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/family",
     name: "Second Look",
     short_name: "Second Look",
-    description: "Mom pays her own bills. The family gets a second look when something's off.",
+    description: "Mom pays her own bills. The family gets a second look when something’s off.",
     start_url: "/open",
     scope: "/",
     display: "standalone",

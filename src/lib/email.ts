@@ -23,7 +23,7 @@ export function signInEmail(link: string, code: string): { subject: string; text
     "",
     `Or type this code on the sign-in page: ${shown}`,
     "",
-    "Both work once, for 15 minutes. If you didn't ask to sign in, you can ignore this email.",
+    "Both work once, for 15 minutes. If you didn’t ask to sign in, you can ignore this email.",
     "",
     "Second Look is a hackathon demo on the PayPal sandbox: no real money moves.",
   ].join("\n");

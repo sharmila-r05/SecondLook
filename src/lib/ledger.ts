@@ -465,7 +465,7 @@ function careBlock(period: CarePeriodRow, rows: PaymentRow[], events: EventRow[]
     text: settled
       ? `Second Look paid ${aide} ${amount} from its PayPal balance.`
       : failed
-        ? `PayPal didn't finish paying ${aide}; it will be tried again.`
+        ? `PayPal didn’t finish paying ${aide}; it will be tried again.`
         : `Second Look is paying ${aide} ${amount} from its PayPal balance.`,
   });
   return {

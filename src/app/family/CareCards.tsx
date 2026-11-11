@@ -190,7 +190,7 @@ export function CareTab({ care, as }: { care: CareView; as: Viewer }) {
               {last.shares.map((s) => (
                 <li key={s.id} className={styles.row}>
                   <span>
-                    {s.name === me ? "Your share" : `${s.name}'s share`} · <span className={styles.amount}>{formatUsd(s.amountCents)}</span>
+                    {s.name === me ? "Your share" : `${s.name}’s share`} · <span className={styles.amount}>{formatUsd(s.amountCents)}</span>
                   </span>
                   <span className={styles.status} data-paid={s.status === "paid" || undefined}>
                     {s.status === "paid" ? "Paid" : s.status === "sent" ? "Invoice sent" : "Sending"}

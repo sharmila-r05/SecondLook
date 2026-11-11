@@ -70,8 +70,8 @@ export function PayFlow() {
     rec.onerror = (e) => {
       setMessage(
         e.error === "not-allowed"
-          ? "The microphone isn't allowed in this browser. You can type it below instead."
-          : "I didn't catch that. Tap the microphone and try again, or type it below.",
+          ? "The microphone isn’t allowed in this browser. You can type it below instead."
+          : "I didn’t catch that. Tap the microphone and try again, or type it below.",
       );
     };
     rec.onend = () => {
@@ -126,7 +126,7 @@ export function PayFlow() {
         >
           <Stitch kind="light" />
           {listening ? <Square className={pay.micIcon} aria-hidden="true" /> : <Mic className={pay.micIcon} aria-hidden="true" />}
-          <span>{listening ? "I'm listening… tap when done" : "Tap and speak"}</span>
+          <span>{listening ? "I’m listening… tap when done" : "Tap and speak"}</span>
         </button>
       )}
 

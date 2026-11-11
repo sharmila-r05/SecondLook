@@ -33,7 +33,7 @@ export type ReadBack =
 /** Reads back what Margaret asked for, before anything happens. Nothing is saved here. */
 export async function hearRequest(text: string): Promise<ReadBack> {
   const said = text.trim().slice(0, 300);
-  if (!said) return { ok: false, message: "I didn't hear anything. Tap the microphone and try again, or type it below." };
+  if (!said) return { ok: false, message: "I didn’t hear anything. Tap the microphone and try again, or type it below." };
 
   const sessionId = await getSessionId();
   const family = await ensureFamily(sessionId);
@@ -42,9 +42,9 @@ export async function hearRequest(text: string): Promise<ReadBack> {
   const parsed = parseRequest(said, memberNamed(family, "aide"));
   if (parsed?.kind === "visit") return { ok: false, message: "", goTo: "/parent/visit" };
   if (!parsed) {
-    return { ok: false, message: "Sorry, I didn't catch who and how much. Try saying “Pay the electric bill, $84.”" };
+    return { ok: false, message: "Sorry, I didn’t catch who and how much. Try saying “Pay the electric bill, $84.”" };
   }
-  if (parsed.amountCents <= 0) return { ok: false, message: "Sorry, I didn't catch the amount. Could you say it again?" };
+  if (parsed.amountCents <= 0) return { ok: false, message: "Sorry, I didn’t catch the amount. Could you say it again?" };
   if (parsed.amountCents > MAX_REQUEST_CENTS) {
     return { ok: false, message: "That’s more than Second Look can pay in one go. Nothing was sent." };
   }
