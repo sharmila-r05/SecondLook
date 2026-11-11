@@ -103,12 +103,26 @@
   color: var(--ink-muted);
 }
 
+/* Beside the panel, as tall as it while it fits the screen. A long day grows the panel, not the two blocks: they stop
+   at the screen's height (less the bar and the border) and stay in view while she scrolls her list. */
 .actions {
+  position: sticky;
+  top: 20px;
   display: grid;
   grid-column: 2;
   grid-row: 1 / span 2;
   grid-template-rows: 1fr 1fr;
   gap: 20px;
+  align-self: start;
+  height: 100%;
+  max-height: calc(100dvh - 108px);
+}
+
+/* A narrower tablet's bar can wrap to two rows. */
+@media (min-width: 761px) and (max-width: 1099px) {
+  .actions {
+    max-height: calc(100dvh - 164px);
+  }
 }
 
 .action {
@@ -297,12 +311,17 @@
     min-height: 160px;
   }
 
+  /* On her phone the two blocks come first, so Pay is always in the first screen however long today's list is. */
   .actions {
+    position: static;
+    order: -1;
     grid-column: auto;
     grid-row: auto;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: none;
     gap: 12px;
+    height: auto;
+    max-height: none;
   }
 
   .action {
