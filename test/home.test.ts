@@ -54,8 +54,14 @@ describe("where the installed app opens", () => {
 
   it("keeps the ready-made family on the family screen, where its alerts are", () => {
     expect(appStartIn(family("ready", true), null, null)).toBe("/family");
-    expect(appStartIn(null, null, null)).toBe("/family");
     expect(homeIn(family("ready", true), "Margaret", null)).toBeNull();
+  });
+});
+
+describe("a freshly installed app", () => {
+  it("opens the welcome page, to sign in or try the ready-made family, never straight into a family", () => {
+    expect(appStartIn(null, null, null)).toBe("/");
+    expect(appStartIn(null, "Margaret", null)).toBe("/");
   });
 });
 

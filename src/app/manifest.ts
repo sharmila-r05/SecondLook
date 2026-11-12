@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 
 // Installable: on iPhone, web push only works from a Home Screen app, so this is what makes Sarah's and Tom's alerts
 // possible there. The app opens through /open, which sends each device to its own person's screen (Mom's tablet to
-// hers, Tom's phone to his). The id stays "/family" so an app already installed is the same app.
+// hers, Tom's phone to his), and a freshly installed app to the welcome page. The id stays "/family" so an app already
+// installed is the same app.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/family",

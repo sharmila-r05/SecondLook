@@ -35,10 +35,13 @@ export function lockedPersonIn(family: Pick<Family, "settings"> | null, person: 
 
 /**
  * Where the app on a home screen opens (the manifest's start_url goes through /open). In a family someone set up,
- * each device opens its own person's screen, so Mom's tablet never opens on Sarah's. The ready-made family opens the
- * family screen, where its alerts are, as it always has; a device nobody was invited on gets the welcome page.
+ * each device opens its own person's screen, so Mom's tablet never opens on Sarah's. A device that chose the
+ * ready-made family in the app opens its family screen, where its alerts are. A device with no family yet (a freshly
+ * installed app: on an iPad or iPhone the Home Screen app keeps its own cookies, apart from Safari's) and a device
+ * nobody was invited on get the welcome page, to sign in and set a family up, or try the ready-made one.
  */
 export function appStartIn(family: Family | null, person: Person | null, account: Account | null): string {
-  if (!family || family.settings.origin !== "setup") return "/family";
+  if (!family) return "/";
+  if (family.settings.origin !== "setup") return "/family";
   return homeIn(family, person, account) ?? "/";
 }
