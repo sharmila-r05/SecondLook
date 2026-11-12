@@ -7,7 +7,7 @@ own words. When a payment looks like a scam, it isn't refused and it isn't paid:
 son takes a second look. Deny, and the hold is voided: the money never left Mom's account. Care costs are handled in the
 same place: the home aide is paid through PayPal Payouts, and the siblings are each invoiced for their share.
 
-**[Live demo](https://secondlook-02u1.onrender.com)** · Video: _link added at submission_ · PayPal **sandbox** only: no
+**[Live demo](https://secondlook-02u1.onrender.com)** · **[Video (2:58)](https://youtu.be/uhZxjzDyTsI)** · PayPal **sandbox** only: no
 real money moves, and every person in it is fictional.
 
 ![Margaret asks to pay $1,500 to "tech support". Her screen says it was sent to Sarah to double-check. Sarah's phone shows what's unusual about it, with Deny and Approve.](assets/readme/the-second-look.png)
