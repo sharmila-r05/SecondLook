@@ -278,6 +278,10 @@ Useful scripts: `scripts/sandbox/*.mjs` are small runs against the PayPal sandbo
   which captures and then pays the payee with Payouts. That keeps the hold, the capture and the payout as separate,
   visible steps. A real launch would pay billers directly (an order with the biller as payee) under PayPal's partner
   terms.
+- **How she pays.** Margaret connects her PayPal once, and PayPal pays from whatever she funds it with: her balance,
+  her bank or her card. Saving a card directly through PayPal Vault, with no PayPal account, uses the same hold, void
+  and capture (measured with PayPal's test card) and is the next step. Bank transfers, wires and gift cards can't be
+  held once sent, which is why scammers ask for them.
 - **New payees.** Someone Margaret names for the first time has no PayPal account on file, so when the family approves
   the payment it goes to the demo's stand-in sandbox account.
 - **Holds that run out** are voided the next time anyone opens a demo page; there is no timer of its own.
